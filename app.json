@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "HATie-MBL",
+    "slug": "HATie-MBL",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
