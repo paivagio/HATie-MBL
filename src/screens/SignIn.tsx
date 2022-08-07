@@ -42,7 +42,7 @@ export function SignIn() {
                 onChangeText={setPassword}
             />
 
-            <Button title="Entrar" w="full" onPress={handleSignIn} />
+            <Button title="Entrar" w="full" variant="green" onPress={handleSignIn} />
         </VStack>
     )
 }

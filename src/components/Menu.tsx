@@ -43,7 +43,7 @@ export function Menu({ variant, home, preferences, ...rest }: Props) {
                 h={55}
                 w={55}
                 rounded={50}
-                _pressed={variant !== 'blank' && { bg: "orange.500" }}
+                _pressed={variant !== 'blank' && { bg: "gray.300" }}
                 {...rest}
             >
                 {

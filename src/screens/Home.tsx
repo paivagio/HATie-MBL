@@ -43,7 +43,7 @@ export function Home() {
     }
 
     function handleOpenDetails(orderId: string) {
-        // navigation.navigate('details', { orderId });
+        navigation.navigate('institutionDetails');
     }
 
     return (

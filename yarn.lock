@@ -4111,6 +4111,13 @@ expo-asset@~8.5.0:
     path-browserify "^1.0.0"
     url-parse "^1.5.9"
 
+expo-av@~11.2.3:
+  version "11.2.3"
+  resolved "https://registry.yarnpkg.com/expo-av/-/expo-av-11.2.3.tgz#254242dae76e3cd60ef9d9c33618e4a12d37aa33"
+  integrity sha512-ptTe96s33Ct0eOsOmNTvtaWFx4B0SDkQmDfPbiuX/C2afqbLQf8geEopw7BRO8ZZl7Qe3qBMH6YLHXKTkZkTyQ==
+  dependencies:
+    "@expo/config-plugins" "^4.0.14"
+
 expo-constants@~13.1.1:
   version "13.1.1"
   resolved "https://registry.yarnpkg.com/expo-constants/-/expo-constants-13.1.1.tgz#78c26c760cc63cd5608bc4b51bd159d7339d8054"
@@ -6508,6 +6515,11 @@ pngjs@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/pngjs/-/pngjs-5.0.0.tgz#e79dd2b215767fd9c04561c01236df960bce7fbb"
   integrity sha512-40QW5YalBNfQo5yRYmiw7Yz6TKKVr3h6970B2YE+3fQpsWcrbj1PzJgxeJ19DRQjhMbKPIuMY8rFaXc8moolVw==
+
+pod-install@^0.1.38:
+  version "0.1.38"
+  resolved "https://registry.yarnpkg.com/pod-install/-/pod-install-0.1.38.tgz#1c16a800a5fc1abea0cafcc0e190f376368c76ab"
+  integrity sha512-NeDWGigjJRriOIKBOvpW2/tK2tYLfyUT7ia6C6L+oarCAhBNP+IGODWdU+GEAqvfsseqOApcFclpXAJTL0UPzA==
 
 posix-character-classes@^0.1.0:
   version "0.1.1"
