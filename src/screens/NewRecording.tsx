@@ -1,80 +1,163 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { VStack, HStack, IconButton, useTheme, Text, ITextProps, Heading, Circle } from 'native-base';
+import { VStack, HStack, useTheme, Text, Circle } from 'native-base';
 import { Microphone } from 'phosphor-react-native';
-import { Audio, AVPlaybackStatus, AVPlaybackStatusError, AVPlaybackStatusSuccess } from 'expo-av';
+import { Audio, AVPlaybackStatus } from 'expo-av';
 
 import { Menu } from '../components/Menu';
 import { Button } from '../components/Button';
+import { Player } from '../components/Player';
 
 export function NewRecording() {
-    const [isRecording, setIsRecording] = useState(false);
-    const [isPlaying, setIsPlaying] = useState(false);
+    const [isRecording, setIsRecording] = useState<boolean>(false);
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    const [audioPermission, setAudioPermission] = useState<boolean>();
+    const [recordingURI, setRecordingURI] = useState<string>();
     const [recording, setRecording] = useState<Audio.Recording>();
     const [sound, setSound] = useState<Audio.Sound>();
-    const [recordingUri, setRecordingUri] = useState<string>();
+    const [recordingTime, setRecordingTime] = useState<number>(0);
+    const [recordedTime, setRecordedTime] = useState<number>(0);
+    const [playingTime, setPlayingTime] = useState<number>(0);
+
     const navigation = useNavigation();
     const { colors } = useTheme();
 
+    useEffect(() => {
+        getAudioPermission();
+    }, []);
+
+    const getAudioPermission = async () => {
+        const permission = await Audio.getPermissionsAsync();
+        setAudioPermission(permission.granted);
+    };
+
+    const requestAudioPermission = async () => {
+        const request = await Audio.requestPermissionsAsync();
+        setAudioPermission(request.granted);
+    };
+
+    const goBack = async () => {
+        if (recording) await recording.stopAndUnloadAsync();
+        if (sound) await sound.unloadAsync();
+        navigation.goBack();
+    };
+
+    const restart = async () => {
+        if (sound) await unmountRecordedAudio();
+        setRecordingURI(undefined);
+    }
+
+    const _onRecordingStatusUpdate = (recordingStatus: Audio.RecordingStatus) => {
+        if (recordingStatus.durationMillis >= 180000) stopRecording();
+        setRecordingTime(recordingStatus.durationMillis);
+    };
+
+    const _onPlaybackStatusUpdate = (playbackStatus: AVPlaybackStatus) => {
+        if (!playbackStatus.isLoaded) {
+            // Update your UI for the unloaded state
+        } else {
+            // Update your UI for the loaded state
+
+            if (playbackStatus.isPlaying) {
+                // Update your UI for the playing state
+                setIsPlaying(true);
+            } else {
+                // Update your UI for the paused state
+            }
+
+            if (playbackStatus.didJustFinish && !playbackStatus.isLooping) {
+                unmountRecordedAudio();
+                setIsPlaying(false);
+            }
+            setPlayingTime(playbackStatus.positionMillis);
+        }
+    };
+
     const startRecording = async () => {
         try {
-            console.log('Requesting permissions..');
-            await Audio.requestPermissionsAsync();
-            await Audio.setAudioModeAsync({
-                allowsRecordingIOS: true,
-                playsInSilentModeIOS: true,
-            });
-            console.log('Starting recording..');
-            const { recording } = await Audio.Recording.createAsync(
-                Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
-            );
-            setIsRecording(true);
-            setRecording(recording);
-            console.log('Recording started');
-        } catch (err) {
-            console.error('Failed to start recording', err);
+            if (!audioPermission) requestAudioPermission();
+            else {
+                await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+                const { recording } = await Audio.Recording.createAsync(
+                    Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY,
+                    _onRecordingStatusUpdate);
+                setRecording(recording);
+                setIsRecording(true);
+            }
+        } catch (error) {
+            console.log(error);
         }
     };
 
     const stopRecording = async () => {
-        console.log('Stopping recording..');
-        setIsRecording(false);
-        setRecording(undefined);
-        await recording.stopAndUnloadAsync();
-        const uri = recording.getURI();
-        setRecordingUri(uri);
-        console.log('Recording stopped and stored at', uri);
-    };
-
-    const playSound = async () => {
-        let loaded = false;
-        console.log('Loading Sound');
-        const { sound } = await Audio.Sound.createAsync(
-            { uri: recordingUri },
-            null,
-            (playerStatus: AVPlaybackStatus) => {
-                if (playerStatus.isLoaded) loaded = true;
-
-            },
-            true
-        );
-        if (loaded) {
-            console.log('Playing Sound');
-            await sound.playAsync()
-                .then((res: AVPlaybackStatusSuccess) => {
-                    console.log(res.positionMillis)
-                }).catch((err: AVPlaybackStatusError) => {
-                    console.log(err.error)
-                });
+        try {
+            setRecordedTime(recordingTime);
+            await recording.stopAndUnloadAsync();
+            setRecordingURI(recording.getURI() ?? "");
+            setIsRecording(false);
+            setRecording(undefined);
+        } catch (error) {
+            console.log(error);
         }
-        setSound(sound);
-        setIsPlaying(true);
     };
 
-    const stopSound = async () => {
-        console.log('Stopping Sound');
-        sound.unloadAsync();
-        setIsPlaying(false);
+    const playRecordedAudio = async () => {
+        try {
+            if (!sound) {
+                await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true });
+                const { sound: soundObj } = await Audio.Sound.createAsync(
+                    { uri: recordingURI },
+                    { shouldPlay: true },
+                    _onPlaybackStatusUpdate,
+                    true
+                );
+                setSound(soundObj);
+            } else {
+                sound.playFromPositionAsync(playingTime);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const pauseRecordedAudio = async () => {
+        try {
+            await sound.pauseAsync();
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const restartRecordedAudio = async () => {
+        try {
+            if (sound) await unmountRecordedAudio();
+            const { sound: soundObj } = await Audio.Sound.createAsync(
+                { uri: recordingURI },
+                { shouldPlay: true },
+                _onPlaybackStatusUpdate,
+                true
+            );
+            setSound(soundObj);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    const unmountRecordedAudio = async () => {
+        try {
+            if (sound) {
+                await sound.unloadAsync();
+                setIsPlaying(false);
+                setSound(undefined);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const submit = async () => {
+        console.log(recordingURI);
+        goBack();
     };
 
     return (
@@ -96,22 +179,42 @@ export function NewRecording() {
                 px={6}
                 alignItems="center"
             >
-                <Circle bg="gray.300" h={120} w={120} mt={170} mb={150}>
+                <Circle bg="gray.300" h={120} w={120} mt={110} mb={70}>
                     <Microphone size={72} color={isRecording ? colors.green[300] : colors.white} />
                 </Circle>
 
+                <Player
+                    value={recordingTime}
+                    min={0}
+                    max={180000}
+                    showButtons={false}
+                    show={isRecording}
+                    mb={30}
+                />
+
+                <Player
+                    value={playingTime}
+                    min={0}
+                    max={recordedTime}
+                    showButtons={true}
+                    onPause={pauseRecordedAudio}
+                    onPlay={playRecordedAudio}
+                    onRepeat={restartRecordedAudio}
+                    show={recordingURI !== undefined}
+                    mb={30}
+                />
+
                 <HStack w="full" justifyContent="space-between">
-                    <Button title="Cancelar" variant="red" w="153" onPress={() => navigation.goBack()} />
+                    <Button title="Cancelar" variant="red" w="153" onPress={() => goBack()} />
                     {isRecording
                         ? <Button title="Parar" variant="gray" w="153" onPress={() => stopRecording()} />
-                        : (recordingUri
-                            ? <Button title="Reiniciar" variant="gray" w="153" onPress={() => setRecordingUri(undefined)} />
+                        : (recordingURI
+                            ? <Button title="Reiniciar" variant="gray" w="153" onPress={() => restart()} />
                             : <Button title="Gravar" variant="green" w="153" onPress={() => startRecording()} />
                         )
                     }
                 </HStack>
-                {recordingUri && <Button title={isPlaying ? "Stop" : "Play"} variant="green" w="full" mt={4} onPress={isPlaying ? stopSound : playSound} />}
-
+                {recordingURI && <Button title="Enviar" variant="green" w="full" mt={4} onPress={() => submit()} />}
             </VStack>
 
             <Menu variant="blank" />
