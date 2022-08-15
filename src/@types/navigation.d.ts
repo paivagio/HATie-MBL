@@ -4,9 +4,9 @@ export declare global {
             home: undefined;
             signin: undefined;
             preferences: undefined;
-            institutionDetails: undefined;
-            groupDetails: undefined;
-            patientDetails: undefined;
+            institutionDetails: { institutionId: string };
+            groupDetails: { groupId: string };
+            patientDetails: { patientId: string };
             summaryDetails: undefined;
             newRecording: undefined;
             // new: undefined;

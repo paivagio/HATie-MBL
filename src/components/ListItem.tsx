@@ -46,37 +46,37 @@ export function ListItem({ data, variant, ...rest }: Props) {
                     <Text color="gray.600" fontSize="md" fontFamily="Roboto_500Medium">
                         {data.name}
                     </Text>
-                    {data.members && <HStack alignItems="center">
+                    {data.members !== undefined ? <HStack alignItems="center">
                         <UsersThree size={15} color={colors.gray[300]} />
                         <Text color="gray.400" fontSize="xs" ml={1}>
                             {data.members} membros
                         </Text>
-                    </HStack>}
-                    {data.patient && <HStack alignItems="center">
+                    </HStack> : null}
+                    {data.patient ? <HStack alignItems="center">
                         <Bed size={15} color={colors.gray[300]} />
                         <Text color="gray.400" fontSize="xs" ml={1}>
                             {data.patient} pacientes
                         </Text>
-                    </HStack>}
-                    {data.patientName && <HStack alignItems="center">
+                    </HStack> : null}
+                    {data.patientName ? <HStack alignItems="center">
                         <IdentificationBadge size={15} color={colors.gray[300]} />
                         <Text color="gray.400" fontSize="xs" ml={1}>
                             {data.patientName}
                         </Text>
-                    </HStack>}
-                    {data.lastUpdated && <HStack alignItems="center">
+                    </HStack> : null}
+                    {data.lastUpdated ? <HStack alignItems="center">
                         <ClockClockwise size={15} color={colors.gray[300]} />
                         <Text color="gray.400" fontSize="xs" ml={1}>
                             {data.lastUpdated}
                         </Text>
-                    </HStack>}
-                    {data.createdOn && <HStack alignItems="center">
+                    </HStack> : null}
+                    {data.createdOn ? <HStack alignItems="center">
                         <ClockAfternoon size={15} color={colors.gray[300]} />
                         <Text color="gray.400" fontSize="xs" ml={1}>
                             {data.createdOn}
                         </Text>
-                    </HStack>}
-                    {data.tags && <HStack w="full" mt={2}>
+                    </HStack> : null}
+                    {data.tags ? <HStack w="full" mt={2}>
                         {data.tags.map(tag => {
                             return (
                                 <Text
@@ -93,7 +93,7 @@ export function ListItem({ data, variant, ...rest }: Props) {
                                 </Text>
                             )
                         })}
-                    </HStack>}
+                    </HStack> : null}
                 </VStack>
 
                 <Circle bg="gray.600" h={12} w={12} mr={5}>
