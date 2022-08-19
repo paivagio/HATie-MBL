@@ -23,7 +23,7 @@ export const toDateFormat = (dateString: string) => {
 export function InstitutionDetails() {
     const [institutionData, setInstitutionData] = useState<Institution>(null);
     const [groups, setGroups] = useState<ListItemProps[]>([]);
-    const [isLoading, setLoading] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const navigation = useNavigation();
     const { colors } = useTheme();
@@ -35,7 +35,7 @@ export function InstitutionDetails() {
         institutionService.getInstitution(institutionId)
             .then(response => {
                 setInstitutionData(response.data);
-                setLoading(false);
+                setIsLoading(false);
             })
             .catch(error => {
                 console.log(error);

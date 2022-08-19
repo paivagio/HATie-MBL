@@ -79,18 +79,17 @@ export function ListItem({ data, variant, ...rest }: Props) {
                     {data.tags ? <HStack w="full" mt={2}>
                         {data.tags.map(tag => {
                             return (
-                                <Text
+                                <Box
                                     key={tag.name}
                                     bg={tag.type === 'Condition' ? '#1A0F92' : tag.type === 'Procedure' ? '#410F92' : '#920F3E'}
-                                    color="white"
-                                    fontSize={10}
+                                    rounded="xl"
                                     py={1}
                                     px={3}
-                                    mr={3}
-                                    rounded="xl"
-                                >
-                                    {tag.name}
-                                </Text>
+                                    mr={1.5}>
+                                    <Text color="white" fontSize={10}>
+                                        {tag.name}
+                                    </Text>
+                                </Box>
                             )
                         })}
                     </HStack> : null}

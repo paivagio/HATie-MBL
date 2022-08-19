@@ -1,48 +1,62 @@
-import { Group } from '../@types';
+import { Patient } from '../@types';
 import Api from '../providers/ApiProvider';
 
 export default {
-    postGroup: async (
+    postPatient: async (
         id: string,
-        name: string,
-        description: string
+        fullname: string,
+        birthDate?: string,
+        height?: number,
+        weight?: number,
+        groupId?: string
     ) => {
         try {
-            const data = await Api.post<Group>(`institutions/${id}/groups`, {
-                name: name,
-                description: description
+            const data = await Api.post<Patient>(`institutions/${id}/patients`, {
+                fullname: fullname,
+                birthDate: birthDate,
+                height: height,
+                weight: weight,
+                groupId: groupId
             });
             return data;
         } catch (error) {
             throw error;
         }
     },
-    getGroup: async (id: string) => {
+    getPatient: async (id: string) => {
         try {
-            const data = await Api.get<Group>(`groups/${id}`, {});
+            const data = await Api.get<Patient>(`patients/${id}`, {});
             return data;
         } catch (error) {
             throw error;
         }
     },
-    patchGroup: async (
+    patchPatient: async (
         id: string,
-        name: string,
-        description: string
+        fullname?: string,
+        birthDate?: string,
+        height?: number,
+        weight?: number,
+        groupId?: string,
+        institutionId?: string
     ) => {
         try {
-            const data = await Api.patch<Group>(`groups/${id}`, {
-                name: name,
-                description: description
+            const data = await Api.patch<Patient>(`patients/${id}`, {
+                fullname: fullname,
+                birthDate: birthDate,
+                height: height,
+                weight: weight,
+                groupId: groupId,
+                institutionId: institutionId
             });
             return data;
         } catch (error) {
             throw error;
         }
     },
-    deleteGroup: async (id: string) => {
+    deletePatient: async (id: string) => {
         try {
-            const data = await Api.delete<Group>(`groups/${id}`, {});
+            const data = await Api.delete<Patient>(`patients/${id}`, {});
             return data;
         } catch (error) {
             throw error;

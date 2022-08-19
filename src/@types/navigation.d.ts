@@ -6,9 +6,9 @@ export declare global {
             preferences: undefined;
             institutionDetails: { institutionId: string };
             groupDetails: { groupId: string };
-            patientDetails: { patientId: string };
-            summaryDetails: undefined;
-            newRecording: undefined;
+            patientDetails: { patientId: string, patientTitle: string };
+            summaryDetails: { summaryId: string };
+            newRecording: { patientId: string, patientTitle: string };
             // new: undefined;
             // details: { orderId: string };
         }

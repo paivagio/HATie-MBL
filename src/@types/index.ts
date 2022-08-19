@@ -62,16 +62,33 @@ export type GroupMember = {
     authorizations: number
 };
 
+export type Insights = {
+    tags: Array<{ name: string; type: 'Condition' | 'Procedure' | 'Substance' }>
+    highlightedTranscription: Array<{ words: string; category: string }>
+    structuredData: {
+        conditions: Array<string>
+        substances: {
+            medicines: Array<string>
+            other: Array<string>
+        };
+        procedures: {
+            imagingExams: Array<string>
+            laboratoryTests: Array<string>
+        }
+    }
+};
+
 export type Patient = {
     id: string
     fullname: string
-    birthstring: string | null
+    birthDate: string | null
     height: number | null
     weight: number | null
     groupId: string | null
     institutionId: string
     createdAt: string
     updatedAt: string
+    Summarization?: Summarization[]
 };
 
 export type Summarization = {
@@ -80,7 +97,8 @@ export type Summarization = {
     title: string
     transcription: string
     audioPath: string | null
-    insights: Object
+    insights: Insights
+    status: SummarizationStatus
     createdAt: string
     updatedAt: string
 };
@@ -92,3 +110,11 @@ export const Status = {
 };
 
 export type Status = (typeof Status)[keyof typeof Status]
+
+export const SummarizationStatus = {
+    PROCESSING: 'PROCESSING',
+    COMPLETED: 'COMPLETED',
+    FAILED: 'FAILED'
+};
+
+export type SummarizationStatus = (typeof SummarizationStatus)[keyof typeof SummarizationStatus]

@@ -19,7 +19,7 @@ type RouteParams = {
 export function GroupDetails() {
     const [groupData, setGroupData] = useState<Group>(null);
     const [patients, setPatients] = useState<ListItemProps[]>([]);
-    const [isLoading, setLoading] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const navigation = useNavigation();
     const { colors } = useTheme();
@@ -31,11 +31,11 @@ export function GroupDetails() {
         groupService.getGroup(groupId)
             .then(response => {
                 setGroupData(response.data);
-                setLoading(false);
+                setIsLoading(false);
             })
             .catch(error => {
                 console.log(error);
-                setLoading(false);
+                setIsLoading(false);
             });
     }, []);
 
@@ -53,8 +53,8 @@ export function GroupDetails() {
         }
     }, [groupData]);
 
-    function handleOpenDetails(patientId: string) {
-        navigation.navigate('patientDetails', { patientId });
+    const handleOpenDetails = (patientId: string, patientTitle: string) => {
+        navigation.navigate('patientDetails', { patientId, patientTitle });
     };
 
     const daysBetween = (dateString: string): string => {
@@ -116,7 +116,7 @@ export function GroupDetails() {
                     <FlatList
                         data={patients}
                         keyExtractor={item => item.id}
-                        renderItem={({ item }) => <ListItem data={item} variant="patient" onPress={() => handleOpenDetails(item.id)} />}
+                        renderItem={({ item }) => <ListItem data={item} variant="patient" onPress={() => handleOpenDetails(item.id, item.name)} />}
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={{ paddingBottom: 100 }}
                         ListEmptyComponent={() => (
