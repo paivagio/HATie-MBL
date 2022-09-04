@@ -12,7 +12,9 @@ export type User = {
 };
 
 export type UserPreferences = {
+    notifications: boolean
     darkmode: boolean
+    sound: boolean
 };
 
 export type Institution = {
@@ -39,6 +41,7 @@ export type Member = {
     createdAt: string
     updatedAt: string
     Institution?: Institution
+    User?: User
 };
 
 export type Group = {
@@ -60,6 +63,7 @@ export type GroupMember = {
     memberId: string
     groupId: string
     authorizations: number
+    Member?: Member
 };
 
 export type Insights = {

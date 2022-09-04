@@ -2,7 +2,7 @@ import { Button as ButtonNativeBase, IButtonProps, Heading, useTheme } from 'nat
 
 type Props = IButtonProps & {
     title: string;
-    variant?: 'white' | 'red' | 'green' | 'orange' | 'blue' | 'darkblue' | 'gray';
+    variant?: 'white' | 'red' | 'green' | 'orange' | 'cyan' | 'darkblue' | 'gray';
 }
 
 export function Button({ title, variant = 'white', ...rest }: Props) {
@@ -22,6 +22,17 @@ export function Button({ title, variant = 'white', ...rest }: Props) {
     } else if (variant === 'gray') {
         buttonColor = colors.gray[300];
         textColor = colors.white;
+    } else if (variant === 'cyan') {
+        buttonColor = colors.blue[300];
+        textColor = colors.white;
+    } else if (variant === 'orange') {
+        buttonColor = colors.orange[700];
+        textColor = colors.white;
+        onClickColor = colors.orange[500];
+    } else if (variant === 'darkblue') {
+        buttonColor = colors.blue[700];
+        textColor = colors.white;
+        onClickColor = colors.blue[500];
     }
 
     return (

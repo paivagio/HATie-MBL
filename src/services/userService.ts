@@ -30,6 +30,14 @@ export default {
             throw error;
         }
     },
+    getUserByEmail: async (email: string) => {
+        try {
+            const data = await Api.get<User>(`users/${email}/search`, {});
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },
     patchUser: async (
         id: string,
         fullname?: string,

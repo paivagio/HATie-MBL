@@ -3,7 +3,7 @@ import { House, GearSix, Plus } from 'phosphor-react-native';
 import { useNavigation } from '@react-navigation/native';
 
 type Props = IPressableProps & {
-    variant: 'institution' | 'group' | 'patient' | 'summary' | 'blank';
+    variant: 'institution' | 'group' | 'patient' | 'summary' | 'member' | 'blank';
     home?: boolean;
     preferences?: boolean;
 }
@@ -11,7 +11,7 @@ type Props = IPressableProps & {
 export function Menu({ variant, home, preferences, ...rest }: Props) {
     const { colors } = useTheme();
     const navigation = useNavigation();
-    const circleColor = variant === 'institution' ? colors.orange[700] : variant === 'group' ? colors.blue[500] : variant === 'patient' ? colors.blue[300] : variant === 'summary' ? colors.blue[700] : colors.gray[100];
+    const circleColor = variant === 'institution' ? colors.orange[700] : variant === 'group' ? colors.blue[500] : variant === 'patient' ? colors.blue[300] : variant === 'summary' ? colors.blue[700] : variant === 'member' ? colors.green[700] : colors.gray[100];
 
     const toHome = () => {
         navigation.navigate('home');
@@ -24,7 +24,7 @@ export function Menu({ variant, home, preferences, ...rest }: Props) {
     return (
         <HStack
             pt={3}
-            pb={5}
+            pb={7}
             px={39}
             w="full"
             bg="white"

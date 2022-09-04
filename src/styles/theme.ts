@@ -9,6 +9,9 @@ export const THEME = extendTheme({
             700: '#F25D07',
             500: '#F28D00'
         },
+        yellow: {
+            300: '#F7CB73'
+        },
         red: {
             500: '#F75A68',
             100: '#FF9EA7'

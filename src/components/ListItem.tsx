@@ -52,7 +52,7 @@ export function ListItem({ data, variant, ...rest }: Props) {
                             {data.members} membros
                         </Text>
                     </HStack> : null}
-                    {data.patient ? <HStack alignItems="center">
+                    {data.patient !== undefined ? <HStack alignItems="center">
                         <Bed size={15} color={colors.gray[300]} />
                         <Text color="gray.400" fontSize="xs" ml={1}>
                             {data.patient} pacientes

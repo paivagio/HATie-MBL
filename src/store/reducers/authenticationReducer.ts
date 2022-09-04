@@ -23,6 +23,9 @@ const authenticationSlice = createSlice({
         },
         setToken: (state, action: PayloadAction<string>) => {
             return { ...state, token: action.payload }
+        },
+        setUser: (state, action: PayloadAction<User>) => {
+            return { ...state, user: action.payload }
         }
     }
 });
@@ -30,7 +33,8 @@ const authenticationSlice = createSlice({
 export const {
     authenticate,
     unauthenticate,
-    setToken
+    setToken,
+    setUser
 } = authenticationSlice.actions
 
 export default authenticationSlice.reducer

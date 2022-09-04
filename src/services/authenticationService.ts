@@ -20,22 +20,5 @@ export default {
         } catch (error) {
             throw error;
         }
-    },
-    //   get: async (
-    //     systemCode
-    //   ) => {
-    //     try {
-    // const data = await Api.post(
-    //     `route/${systemCode}`
-    //     );
-    //       const data = await Api.get(`route`, {
-    //         params: {
-    //           systemCode
-    //         },
-    //       });
-    //       return data;
-    //     } catch (error) {
-    //       throw error;
-    //     }
-    //   },
+    }
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { HStack, VStack, useTheme, Text, Heading, FlatList, Center, Circle } from 'native-base';
 import { SmileyMeh, Bed, UsersThree, Calendar, UsersFour } from 'phosphor-react-native';
 
@@ -27,20 +27,22 @@ export function GroupDetails() {
 
     const { groupId } = route.params as RouteParams;
 
-    useEffect(() => {
-        groupService.getGroup(groupId)
-            .then(response => {
-                setGroupData(response.data);
-                setIsLoading(false);
-            })
-            .catch(error => {
-                console.log(error);
-                setIsLoading(false);
-            });
-    }, []);
+    useFocusEffect(
+        React.useCallback(() => {
+            groupService.getGroup(groupId)
+                .then(response => {
+                    setGroupData(response.data);
+                    setIsLoading(false);
+                })
+                .catch(error => {
+                    console.log(error);
+                    setIsLoading(false);
+                });
+        }, [])
+    );
 
     useEffect(() => {
-        if (groupData && patients.length === 0) {
+        if (groupData) {
             const groupPatients = groupData.Patient.map<ListItemProps>((patient, key) => {
                 return {
                     id: patient.id,
@@ -55,6 +57,10 @@ export function GroupDetails() {
 
     const handleOpenDetails = (patientId: string, patientTitle: string) => {
         navigation.navigate('patientDetails', { patientId, patientTitle });
+    };
+
+    const handleAddPatientToGroup = () => {
+        navigation.navigate('addPatientToGroup', { institutionId: groupData.institutionId, groupId });
     };
 
     const daysBetween = (dateString: string): string => {
@@ -106,7 +112,7 @@ export function GroupDetails() {
                             </Circle>
                         </HStack>
 
-                        <Button title="Gerenciar" w="full" my={14} />
+                        <Button title="Gerenciar" w="full" my={14} onPress={() => navigation.navigate('manageGroup', { groupId: groupData.id })} />
                     </VStack>
 
                     <Heading color="gray.600" fontSize="lg" mb={4}>
@@ -131,7 +137,7 @@ export function GroupDetails() {
                     />
                 </VStack>
 
-                <Menu variant="patient" onPress={() => console.log('Ferro e Lucas trouxas')} />
+                <Menu variant="patient" onPress={() => handleAddPatientToGroup()} />
             </VStack>}
         </>
     );

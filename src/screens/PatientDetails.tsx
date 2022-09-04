@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { HStack, VStack, useTheme, Text, Heading, FlatList, Center, Circle } from 'native-base';
 import { SmileyMeh, Calendar, PersonSimple, IdentificationBadge, Ruler, Barbell } from 'phosphor-react-native';
 
@@ -28,17 +28,19 @@ export function PatientDetails() {
 
     const { patientId, patientTitle } = route.params as RouteParams;
 
-    useEffect(() => {
-        patientService.getPatient(patientId)
-            .then(response => {
-                setPatientData(response.data);
-                setIsLoading(false);
-            })
-            .catch(error => {
-                console.log(error);
-                setIsLoading(false);
-            });
-    }, []);
+    useFocusEffect(
+        React.useCallback(() => {
+            patientService.getPatient(patientId)
+                .then(response => {
+                    setPatientData(response.data);
+                    setIsLoading(false);
+                })
+                .catch(error => {
+                    console.log(error);
+                    setIsLoading(false);
+                });
+        }, [])
+    );
 
     useEffect(() => {
         if (patientData && summaries.length === 0) {
@@ -62,6 +64,16 @@ export function PatientDetails() {
 
     const handleOpenDetails = (summaryId: string) => {
         navigation.navigate('summaryDetails', { summaryId });
+    };
+
+    const removePatientFromGroup = () => {
+        patientService.patchPatient(patientId, null, null, null, null, "", null)
+            .then(() => {
+                navigation.goBack();
+            })
+            .catch(error => {
+                console.log(error);
+            });
     };
 
     const toDateFormatLong = (dateString: string) => {
@@ -120,7 +132,7 @@ export function PatientDetails() {
                             </Circle>
                         </HStack>
 
-                        <Button title="Remover do grupo" w="full" my={14} />
+                        <Button title="Remover do grupo" w="full" my={14} onPress={() => removePatientFromGroup()} />
                     </VStack>
 
                     <Heading color="gray.600" fontSize="lg" mb={4}>

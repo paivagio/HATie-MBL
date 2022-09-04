@@ -31,6 +31,14 @@ export default {
             throw error;
         }
     },
+    getPatients: async (id: string) => {
+        try {
+            const data = await Api.get<Patient[]>(`institutions/${id}/patients`, {});
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },
     patchPatient: async (
         id: string,
         fullname?: string,

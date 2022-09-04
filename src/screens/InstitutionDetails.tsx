@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { HStack, VStack, useTheme, Text, Heading, FlatList, Center, Circle } from 'native-base';
 import { SmileyMeh, Buildings, Medal, Bed, UsersThree, Calendar } from 'phosphor-react-native';
 
@@ -31,19 +31,21 @@ export function InstitutionDetails() {
 
     const { institutionId } = route.params as RouteParams;
 
-    useEffect(() => {
-        institutionService.getInstitution(institutionId)
-            .then(response => {
-                setInstitutionData(response.data);
-                setIsLoading(false);
-            })
-            .catch(error => {
-                console.log(error);
-            });
-    }, []);
+    useFocusEffect(
+        React.useCallback(() => {
+            institutionService.getInstitution(institutionId)
+                .then(response => {
+                    setInstitutionData(response.data);
+                    setIsLoading(false);
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+        }, [])
+    );
 
     useEffect(() => {
-        if (institutionData && groups.length === 0) {
+        if (institutionData) {
             const institutionGroups = institutionData.Group.map<ListItemProps>(group => {
                 return {
                     id: group.id,
@@ -57,6 +59,10 @@ export function InstitutionDetails() {
 
     function handleOpenDetails(groupId: string) {
         navigation.navigate('groupDetails', { groupId });
+    };
+
+    const handleNewGroup = () => {
+        navigation.navigate('newGroup', { institutionId });
     };
 
     return (
@@ -102,7 +108,12 @@ export function InstitutionDetails() {
                             </Circle>
                         </HStack>
 
-                        <Button title="Gerenciar" w="full" my={14} />
+                        <Button
+                            title="Gerenciar"
+                            w="full"
+                            my={14}
+                            onPress={() => navigation.navigate('manageInstitution', { institutionId: institutionData.id })}
+                        />
                     </VStack>
 
                     <Heading color="gray.600" fontSize="lg" mb={4}>
@@ -127,7 +138,7 @@ export function InstitutionDetails() {
                     />
                 </VStack>
 
-                <Menu variant="group" onPress={() => console.log('Ferro e Lucas trouxas')} />
+                <Menu variant="group" onPress={() => handleNewGroup()} />
             </VStack>}
         </>
     );

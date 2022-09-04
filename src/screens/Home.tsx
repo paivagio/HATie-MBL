@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 import { HStack, IconButton, VStack, useTheme, Text, Heading, FlatList, Center, Circle } from 'native-base';
 import { SignOut } from 'phosphor-react-native';
@@ -19,38 +19,41 @@ import { unauthenticate } from '../store/reducers/authenticationReducer';
 import { useDispatch, useSelector } from '../hooks';
 import { StoreState } from '../store/store';
 import { Loading } from '../components/Loading';
+import React from 'react';
 
 export function Home() {
     const { id: userId, isAdmin } = useSelector((state: StoreState) => state.auth.user);
     const [userData, setUserData] = useState<User>(null);
     const [selectedFilter, setSelectedFilter] = useState<'first' | 'second'>('first');
-    const [pendingInvites, setPendingInvites] = useState(false);
     const [institutions, setInstitutions] = useState<ListItemProps[]>([]);
     const [isLoading, setLoading] = useState<boolean>(true);
     const filteredInstitutions = institutions.length === 0 ? [] : institutions.filter((item: ListItemProps) => item.owned === (selectedFilter === 'first'));
+    const pendingInvites = userData ? userData.Member.filter(member => member.invitation === "PENDING").length > 0 : false;
 
     const navigation = useNavigation();
     const { colors } = useTheme();
     const dispatch = useDispatch();
 
-    useEffect(() => {
-        userService.getUser(userId)
-            .then(response => {
-                setUserData(response.data);
-                setLoading(false);
-            })
-            .catch(error => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                };
-                setLoading(false);
-            });
-    }, []);
+    useFocusEffect(
+        React.useCallback(() => {
+            userService.getUser(userId)
+                .then(response => {
+                    setUserData(response.data);
+                    setLoading(false);
+                })
+                .catch(error => {
+                    if (axios.isAxiosError(error)) {
+                        console.log('error message: ', error.message);
+                    } else {
+                        console.log('unexpected error: ', error);
+                    };
+                    setLoading(false);
+                });
+        }, [])
+    );
 
     useEffect(() => {
-        if (userData && institutions.length === 0) {
+        if (userData) {
             const userInstitutions = userData.Institution.map<ListItemProps>(institution => {
                 return {
                     id: institution.id,
@@ -74,12 +77,11 @@ export function Home() {
             }).filter(item => item !== null);
 
             setInstitutions([...userInstitutions, ...participatingInstitutions]);
-            setPendingInvites(userData.Member.length > 0);
         }
     }, [userData]);
 
-    const handleNewOrder = () => {
-        // navigation.navigate('new');
+    const handleNewInstitution = () => {
+        navigation.navigate('newInstitution', { ownerId: userId });
     }
 
     const handleOpenDetails = (institutionId: string) => {
@@ -127,6 +129,7 @@ export function Home() {
                                 </VStack>
 
                             }
+                            onPress={() => navigation.navigate('invitations')}
                         />
                     </HStack>
 
@@ -164,7 +167,7 @@ export function Home() {
                     />
                 </VStack>
 
-                <Menu variant={isAdmin ? "institution" : "blank"} onPress={() => console.log('Ferro e Lucas trouxas')} home />
+                <Menu variant={isAdmin ? "institution" : "blank"} onPress={() => handleNewInstitution()} home />
             </VStack>}
         </>
 
