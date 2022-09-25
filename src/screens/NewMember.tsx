@@ -33,12 +33,14 @@ export function NewMember() {
     const { institutionId } = route.params as RouteParams;
 
     const addMember = async () => {
-        if (!user) return;
+        if (!user) {
+            setIsLoading(false);
+            return;
+        }
 
         console.log(user)
 
         setIsRequired(false);
-        setIsLoading(true);
 
         memberService.postMember(institutionId, user.id)
             .then(() => {
@@ -50,6 +52,7 @@ export function NewMember() {
                 } else {
                     console.log('unexpected error: ', error);
                 }
+                setIsLoading(false);
             });
     };
 
@@ -60,6 +63,7 @@ export function NewMember() {
         };
 
         setIsRequired(false);
+        setIsLoading(true);
 
         userService.getUserByEmail(email)
             .then((response) => {
@@ -69,6 +73,7 @@ export function NewMember() {
             })
             .catch((error) => {
                 setUserDoesNotExists(true);
+                setIsLoading(false);
             });
     };
 

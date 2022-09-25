@@ -7,12 +7,19 @@ import { ListItem, ListItemProps } from '../components/ListItem';
 import { Menu } from '../components/Menu';
 import { Header } from '../components/Header';
 import { Button } from '../components/Button';
-import institutionService from '../services/institutionService';
 import { Loading } from '../components/Loading';
-import { Institution } from '../@types';
+import { GroupMember, Institution } from '../@types';
+import { useDispatch, useSelector } from '../hooks';
+
+import institutionService from '../services/institutionService';
+import { setInstitutionPermissions } from '../store/reducers/authorizationReducer';
+import memberService from '../services/memberService';
 
 type RouteParams = {
     institutionId: string;
+    isOwner: boolean;
+    memberId: string;
+    memberPermissions?: number;
 };
 
 export const toDateFormat = (dateString: string) => {
@@ -22,21 +29,34 @@ export const toDateFormat = (dateString: string) => {
 
 export function InstitutionDetails() {
     const [institutionData, setInstitutionData] = useState<Institution>(null);
+    const [memberGroupMemberships, setMemberGroupMemberships] = useState<GroupMember[]>(null);
     const [groups, setGroups] = useState<ListItemProps[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const navigation = useNavigation();
     const { colors } = useTheme();
     const route = useRoute();
+    const dispatch = useDispatch();
 
-    const { institutionId } = route.params as RouteParams;
+    const { institutionId, isOwner, memberId, memberPermissions } = route.params as RouteParams;
+    const isModerator = memberPermissions && memberPermissions === 222;
 
     useFocusEffect(
         React.useCallback(() => {
             institutionService.getInstitution(institutionId)
                 .then(response => {
                     setInstitutionData(response.data);
-                    setIsLoading(false);
+                    if (!isOwner) {
+                        memberService.getMember(memberId)
+                            .then(response => {
+                                setMemberGroupMemberships(response.data.GroupMember);
+                            })
+                            .catch(error => {
+                                console.log(error);
+                            });
+                    } else {
+                        setMemberGroupMemberships([]);
+                    }
                 })
                 .catch(error => {
                     console.log(error);
@@ -45,20 +65,43 @@ export function InstitutionDetails() {
     );
 
     useEffect(() => {
-        if (institutionData) {
-            const institutionGroups = institutionData.Group.map<ListItemProps>(group => {
-                return {
-                    id: group.id,
-                    name: group.name,
-                    patient: group._count.Patient
-                };
-            });
-            setGroups(institutionGroups);
-        }
-    }, [institutionData])
+        dispatch(setInstitutionPermissions({ isOwner: isOwner, isModerator: isModerator }));
+    }, []);
 
-    function handleOpenDetails(groupId: string) {
-        navigation.navigate('groupDetails', { groupId });
+    useEffect(() => {
+        if (institutionData && memberGroupMemberships?.length >= 0) {
+            const institutionGroups = institutionData.Group.map<ListItemProps>(group => {
+                let response: ListItemProps | null;
+
+                if (isOwner) {
+                    response = {
+                        id: group.id,
+                        name: group.name,
+                        patient: group._count.Patient,
+                        groupMemberId: null
+                    };
+                } else {
+                    const groupMembership = memberGroupMemberships.find(groupMembership => groupMembership.groupId === group.id)
+                    response = groupMembership
+                        ? {
+                            id: group.id,
+                            name: group.name,
+                            patient: group._count.Patient,
+                            groupMemberId: groupMembership.id
+                        }
+                        : undefined;
+                }
+
+                return response;
+            });
+
+            setGroups(institutionGroups.filter(group => group !== undefined));
+            setIsLoading(false);
+        }
+    }, [institutionData, memberGroupMemberships])
+
+    function handleOpenDetails(groupId: string, groupMemberId: string) {
+        navigation.navigate('groupDetails', { groupId, groupMemberId });
     };
 
     const handleNewGroup = () => {
@@ -113,6 +156,7 @@ export function InstitutionDetails() {
                             w="full"
                             my={14}
                             onPress={() => navigation.navigate('manageInstitution', { institutionId: institutionData.id })}
+                            isDisabled={!isOwner && !isModerator}
                         />
                     </VStack>
 
@@ -123,7 +167,7 @@ export function InstitutionDetails() {
                     <FlatList
                         data={groups}
                         keyExtractor={item => item.id}
-                        renderItem={({ item }) => <ListItem data={item} variant="group" onPress={() => handleOpenDetails(item.id)} />}
+                        renderItem={({ item }) => <ListItem data={item} variant="group" onPress={() => handleOpenDetails(item.id, item.groupMemberId)} />}
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={{ paddingBottom: 100 }}
                         ListEmptyComponent={() => (
@@ -138,7 +182,7 @@ export function InstitutionDetails() {
                     />
                 </VStack>
 
-                <Menu variant="group" onPress={() => handleNewGroup()} />
+                <Menu variant={(isOwner || isModerator) ? "group" : "blank"} onPress={() => (isOwner || isModerator) ? handleNewGroup() : {}} />
             </VStack>}
         </>
     );

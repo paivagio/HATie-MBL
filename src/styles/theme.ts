@@ -7,7 +7,8 @@ export const THEME = extendTheme({
         },
         orange: {
             700: '#F25D07',
-            500: '#F28D00'
+            500: '#F28D00',
+            300: '#FF9900'
         },
         yellow: {
             300: '#F7CB73'

@@ -7,32 +7,58 @@ import { ListItem, ListItemProps } from '../components/ListItem';
 import { Menu } from '../components/Menu';
 import { Header } from '../components/Header';
 import { Button } from '../components/Button';
-import { Group } from '../@types';
+import { Group, GroupMember } from '../@types';
 import { Loading } from '../components/Loading';
 import groupService from '../services/groupService';
 import { toDateFormat } from './InstitutionDetails';
+import { useDispatch, useSelector } from '../hooks';
+import { StoreState } from '../store/store';
+import groupMemberService from '../services/groupMemberService';
+import { setGroupPermissions } from '../store/reducers/authorizationReducer';
+
 
 type RouteParams = {
     groupId: string;
+    groupMemberId: string;
 };
 
+const getGroupMemberAccessLevel = (authorizations?: number) => {
+    return authorizations
+        ? { canRead: authorizations >= 1, canWrite: authorizations >= 11, canDelete: authorizations >= 111 }
+        : { canRead: false, canWrite: false, canDelete: false }
+}
+
 export function GroupDetails() {
+    const { isOwner, isModerator } = useSelector((state: StoreState) => state.access);
+
     const [groupData, setGroupData] = useState<Group>(null);
+    const [groupMemberData, setGroupMemberData] = useState<GroupMember>(null);
     const [patients, setPatients] = useState<ListItemProps[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const navigation = useNavigation();
+    const dispatch = useDispatch();
     const { colors } = useTheme();
     const route = useRoute();
 
-    const { groupId } = route.params as RouteParams;
+    const { groupId, groupMemberId } = route.params as RouteParams;
+
+    const { canRead, canWrite, canDelete } = getGroupMemberAccessLevel(groupMemberData?.authorizations);
 
     useFocusEffect(
         React.useCallback(() => {
             groupService.getGroup(groupId)
                 .then(response => {
                     setGroupData(response.data);
-                    setIsLoading(false);
+                    if (!isOwner) {
+                        groupMemberService.getGroupMember(groupMemberId)
+                            .then(response => {
+                                setGroupMemberData(response.data);
+                            })
+                            .catch(error => {
+                                console.log(error);
+                            });
+                    }
                 })
                 .catch(error => {
                     console.log(error);
@@ -52,8 +78,15 @@ export function GroupDetails() {
                 };
             });
             setPatients(groupPatients);
+            setIsLoading(false);
         }
     }, [groupData]);
+
+    useEffect(() => {
+        if (groupMemberData) {
+            dispatch(setGroupPermissions({ canRead, canWrite, canDelete }))
+        }
+    }, [groupMemberData]);
 
     const handleOpenDetails = (patientId: string, patientTitle: string) => {
         navigation.navigate('patientDetails', { patientId, patientTitle });
@@ -112,7 +145,13 @@ export function GroupDetails() {
                             </Circle>
                         </HStack>
 
-                        <Button title="Gerenciar" w="full" my={14} onPress={() => navigation.navigate('manageGroup', { groupId: groupData.id })} />
+                        <Button
+                            title="Gerenciar"
+                            w="full"
+                            my={14}
+                            onPress={() => navigation.navigate('manageGroup', { groupId: groupData.id })}
+                            isDisabled={!isOwner && !isModerator}
+                        />
                     </VStack>
 
                     <Heading color="gray.600" fontSize="lg" mb={4}>
@@ -137,7 +176,7 @@ export function GroupDetails() {
                     />
                 </VStack>
 
-                <Menu variant="patient" onPress={() => handleAddPatientToGroup()} />
+                <Menu variant={(isOwner || isModerator || canWrite) ? "patient" : "blank"} onPress={() => { (isOwner || isModerator || canWrite) ? handleAddPatientToGroup() : {} }} />
             </VStack>}
         </>
     );

@@ -1,10 +1,11 @@
-import { Box, HStack, VStack } from 'native-base';
+import { Box, HStack, VStack, Text } from 'native-base';
 import { IVStackProps } from 'native-base/lib/typescript/components/primitives/Stack/VStack';
 import React from 'react';
 
 type Row = {
     title: string;
     values: Array<string>;
+    color: string;
 }
 
 type Props = IVStackProps & {
@@ -21,33 +22,33 @@ export function FindingsTable({ data, ...rest }: Props) {
                         w="full"
                         mb={0.2}
                         alignItems="center"
-                        borderBottomWidth={1}
-                        borderBottomColor="black">
+                        borderBottomWidth={3}
+                        borderColor="white">
                         <Box
-                            bg="gray.100"
+                            bg={row.color}
                             w="35%"
+                            h="full"
                             px={2}
                             py={1}
                             _text={{
                                 fontSize: "xs",
-                                color: "gray.600",
+                                color: "white",
                             }}>
                             {row.title}
                         </Box>
-                        <Box
+                        <Text
                             bg="white"
                             px={3}
                             py={1}
-                            _text={{
-                                fontSize: "xs",
-                                color: "gray.600",
-                            }}>
-                            {
-                                row.values.join(', ')
-                            }
-                        </Box>
+                            w="65%"
+                            fontSize="xs"
+                            color="gray.600"
+                            overflow="hidden"
+                        >
+                            {row.values.join('\n')}
+                        </Text>
                     </HStack>
-                )
+                );
             })}
         </VStack>
     );

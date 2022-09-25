@@ -92,7 +92,7 @@ export function ManageGroup() {
 
                         <Button
                             title="Responsáveis"
-                            variant="white"
+                            variant="green"
                             w="full"
                             onPress={() => navigation.navigate('manageGroupMembers', { groupId })}
                         />

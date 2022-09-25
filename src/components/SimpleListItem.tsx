@@ -1,23 +1,28 @@
-import { Box, HStack, Text, useTheme, VStack, Pressable, IPressableProps } from 'native-base';
-import { User } from 'phosphor-react-native';
-import { useState } from 'react';
+import { Box, HStack, Text, useTheme, VStack, Pressable, IPressableProps, IconButton } from 'native-base';
+import { ArrowDown, ArrowUp, Plus, X } from 'phosphor-react-native';
+import React, { useState } from 'react';
+import { Member, User } from '../@types';
 
 type SimpleListItemProps = {
     id: string;
     name?: string;
     fullname?: string;
-    User?: {
-        fullname: string;
-    }
+    User?: User;
+    Member?: Member;
+    authorizations?: number;
 }
 
 type Props = IPressableProps & {
     data: SimpleListItemProps;
     variant: 'institution' | 'group' | 'patient' | 'summary' | 'member' | 'memberPending';
     selectedId: string;
+    onAdd?: Function;
+    onUpgrade?: Function;
+    onDowngrade?: Function;
+    onDelete?: Function;
 }
 
-export function SimpleListItem({ data, variant, selectedId, ...rest }: Props) {
+export function SimpleListItem({ data, variant, selectedId, onAdd, onUpgrade, onDowngrade, onDelete, ...rest }: Props) {
     const selected = selectedId === data.id;
 
     const { colors } = useTheme();
@@ -43,11 +48,65 @@ export function SimpleListItem({ data, variant, selectedId, ...rest }: Props) {
                     >
                         <Box h="full" w={2} bg={itemColor} />
 
-                        <VStack flex={1} my={3} ml={4}>
-                            <Text color={textColor} fontSize="sm">
-                                {data.name ?? data.fullname ?? data.User.fullname ?? ""}
+                        <HStack flex={1} my={3} ml={4} alignItems="center">
+                            <Text color={textColor} fontSize="sm" w={20} noOfLines={1}>
+                                {data.name ?? data.fullname ?? data.User?.fullname ?? data.Member?.User.fullname ?? ""}
                             </Text>
-                        </VStack>
+                            {variant !== 'group'
+                                ? <></>
+                                : data.id
+                                    ? <HStack right={3} position="absolute" alignItems="center">
+                                        <Text color={data.authorizations >= 1 ? colors.gray[600] : colors.gray[200]} fontSize="sm" mr={1}>
+                                            R
+                                        </Text>
+
+                                        <Text color={data.authorizations >= 11 ? colors.gray[600] : colors.gray[200]} fontSize="sm" mr={1}>
+                                            W
+                                        </Text>
+
+                                        <Text color={data.authorizations >= 111 ? colors.gray[600] : colors.gray[200]} fontSize="sm">
+                                            D
+                                        </Text>
+
+                                        <IconButton
+                                            icon={<ArrowUp size={20} color={colors.green[700]} />}
+                                            onPress={() => onUpgrade()}
+                                            isDisabled={data.authorizations >= 111}
+                                        />
+
+                                        <IconButton
+                                            icon={<ArrowDown size={20} color={colors.orange[300]} />}
+                                            onPress={() => onDowngrade()}
+                                            isDisabled={data.authorizations <= 1}
+                                        />
+
+                                        <IconButton
+                                            icon={<X size={20} color={colors.red[500]} />}
+                                            onPress={() => onDelete()}
+                                        />
+                                    </HStack>
+                                    : <HStack right={3} position="absolute" alignItems="center">
+                                        <Text color={colors.gray[200]} fontSize="sm" mr={1}>
+                                            R
+                                        </Text>
+
+                                        <Text color={colors.gray[200]} fontSize="sm" mr={1}>
+                                            W
+                                        </Text>
+
+                                        <Text color={colors.gray[200]} fontSize="sm">
+                                            D
+                                        </Text>
+
+                                        <IconButton
+                                            icon={<Plus size={20} color={colors.green[700]} />}
+                                            onPress={() => onAdd()}
+                                        />
+                                    </HStack>
+
+                            }
+
+                        </HStack>
 
                     </HStack>
                 )

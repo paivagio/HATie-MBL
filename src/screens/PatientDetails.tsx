@@ -1,16 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useReducer, useState } from 'react';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import { HStack, VStack, useTheme, Text, Heading, FlatList, Center, Circle } from 'native-base';
+import { HStack, VStack, useTheme, Text, Heading, FlatList, Center, Circle, IconButton } from 'native-base';
 import { SmileyMeh, Calendar, PersonSimple, IdentificationBadge, Ruler, Barbell } from 'phosphor-react-native';
+import { AntDesign } from '@expo/vector-icons';
 
 import { ListItem, ListItemProps } from '../components/ListItem';
 import { Menu } from '../components/Menu';
 import { Header } from '../components/Header';
 import { Button } from '../components/Button';
-import { Patient, Summarization, SummarizationStatus } from '../@types';
+import { Patient, Summarization } from '../@types';
 import patientService from '../services/patientService';
 import { toDateFormat } from './InstitutionDetails';
 import { Loading } from '../components/Loading';
+import { useSelector } from '../hooks';
+import { StoreState } from '../store/store';
 
 type RouteParams = {
     patientId: string;
@@ -18,9 +21,12 @@ type RouteParams = {
 };
 
 export function PatientDetails() {
+    const { isOwner, isModerator } = useSelector((state: StoreState) => state.access);
+    const { canWrite, canDelete } = useSelector((state: StoreState) => state.access.groupPermissions);
+
     const [patientData, setPatientData] = useState<Patient>(null);
-    const [summaries, setSummaries] = useState<ListItemProps[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [reload, setReload] = useState<boolean>(false);
 
     const navigation = useNavigation();
     const { colors } = useTheme();
@@ -39,11 +45,11 @@ export function PatientDetails() {
                     console.log(error);
                     setIsLoading(false);
                 });
-        }, [])
+        }, [reload])
     );
 
-    useEffect(() => {
-        if (patientData && summaries.length === 0) {
+    const assembleSummaries = (patientData: Patient,) => {
+        if (patientData) {
             const orderedSummaries = patientData.Summarization.sort((summA: Summarization, summB: Summarization) => {
                 return new Date(summA.createdAt).getTime() - new Date(summB.createdAt).getTime();
             })
@@ -53,17 +59,17 @@ export function PatientDetails() {
                     id: summary.id,
                     name: `Sumarização #0${key + 1}`,
                     createdOn: toDateFormatLong(summary.createdAt),
-                    processed: summary.status === SummarizationStatus.COMPLETED,
+                    status: summary.status,
                     tags: summary.insights.tags
                 };
             });
 
-            setSummaries(patientSummaries);
+            return patientSummaries;
         }
-    }, [patientData]);
+    };
 
-    const handleOpenDetails = (summaryId: string) => {
-        navigation.navigate('summaryDetails', { summaryId });
+    const handleOpenDetails = (summaryId: string, summaryTitle: string) => {
+        navigation.navigate('summaryDetails', { summaryId, summaryTitle });
     };
 
     const removePatientFromGroup = () => {
@@ -82,6 +88,8 @@ export function PatientDetails() {
         const stringHour = date.getHours();
         return `${stringDate} às ${stringHour}h`;
     };
+
+    const summaries: ListItemProps[] = assembleSummaries(patientData);
 
     return (
         <>
@@ -132,7 +140,23 @@ export function PatientDetails() {
                             </Circle>
                         </HStack>
 
-                        <Button title="Remover do grupo" w="full" my={14} onPress={() => removePatientFromGroup()} />
+                        <HStack w="full" my={14} justifyContent="space-between">
+
+                            <Button
+                                title="Remover do grupo"
+                                w="78%"
+                                onPress={() => removePatientFromGroup()}
+                                isDisabled={!isOwner && !isModerator && !canDelete}
+                            />
+
+                            <IconButton
+                                w="20%"
+                                bg="white"
+                                icon={<AntDesign name="reload1" size={24} color="black" />}
+                                onPress={() => setReload(!reload)}
+                            />
+                        </HStack>
+
                     </VStack>
 
                     <Heading color="gray.600" fontSize="lg" mb={4}>
@@ -142,7 +166,7 @@ export function PatientDetails() {
                     <FlatList
                         data={summaries}
                         keyExtractor={item => item.id}
-                        renderItem={({ item }) => <ListItem data={item} variant="summary" onPress={() => handleOpenDetails(item.id)} />}
+                        renderItem={({ item }) => <ListItem data={item} variant="summary" onPress={() => handleOpenDetails(item.id, item.name)} />}
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={{ paddingBottom: 100 }}
                         ListEmptyComponent={() => (
@@ -157,7 +181,10 @@ export function PatientDetails() {
                     />
                 </VStack>
 
-                <Menu variant="summary" onPress={() => navigation.navigate('newRecording', { patientId, patientTitle })} />
+                <Menu
+                    variant={(isOwner || isModerator || canWrite) ? "summary" : "blank"}
+                    onPress={() => { (isOwner || isModerator || canWrite) ? navigation.navigate('newRecording', { patientId, patientTitle }) : {} }}
+                />
             </VStack>}
         </>
     );

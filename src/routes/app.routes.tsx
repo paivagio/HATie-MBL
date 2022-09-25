@@ -19,6 +19,7 @@ import { ManageMembers } from '../screens/ManageMembers';
 import { NewMember } from '../screens/NewMember';
 import { ManageGroup } from '../screens/ManageGroup';
 import { ManageGroupMembers } from '../screens/ManageGroupMembers';
+import { EditMember } from '../screens/EditMember';
 
 const { Navigator, Screen } = createNativeStackNavigator();
 
@@ -41,6 +42,7 @@ export function AppRoutes() {
             <Screen name="newPatient" component={NewPatient} />
             <Screen name="editPatient" component={EditPatient} />
             <Screen name="manageMembers" component={ManageMembers} />
+            <Screen name="editMember" component={EditMember} />
             <Screen name="newMember" component={NewMember} />
             <Screen name="manageGroup" component={ManageGroup} />
             <Screen name="manageGroupMembers" component={ManageGroupMembers} />

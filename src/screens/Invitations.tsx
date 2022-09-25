@@ -1,24 +1,28 @@
-import { Center, FlatList, Heading, HStack, IconButton, Switch, Text, useTheme, VStack } from 'native-base';
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { Center, FlatList, Heading, Text, useTheme, VStack } from 'native-base';
+
+import { MoonStars } from 'phosphor-react-native';
 
 import { Header } from '../components/Header';
 import { Loading } from '../components/Loading';
 import { Menu } from '../components/Menu';
+import { Invite } from '../components/Invite';
+import { AlertPopup } from '../components/AlertPopup';
 
 import userService from '../services/userService';
+import memberService from '../services/memberService';
+
 import { Member, Status } from '../@types';
 
-import { useSelector } from '../hooks';
 import { StoreState } from '../store/store';
-import { Buildings, Check, MoonStars, X } from 'phosphor-react-native';
-import { Invite } from '../components/Invite';
-import memberService from '../services/memberService';
+import { useSelector } from '../hooks';
 
 export function Invitations() {
     const { id: userId } = useSelector((state: StoreState) => state.auth.user);
+
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [invitations, setInvitations] = useState<Member[]>([]);
+    const [error, setError] = useState<string>("");
 
     const pendingInvitations = isLoading ? [] : invitations.filter(invitation => invitation.invitation === 'PENDING');
 
@@ -31,11 +35,7 @@ export function Invitations() {
                 setIsLoading(false);
             })
             .catch(error => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                };
+                setError(error.message);
                 setIsLoading(false);
             });
     }, []);
@@ -46,16 +46,12 @@ export function Invitations() {
         memberService.patchMember(id, null, invitationStatus)
             .then(() => {
                 const updatedInviteIndex = invitations.findIndex(invite => invite.id === id);
-                const updatedInvitations = invitations;
+                const updatedInvitations = [...invitations];
                 updatedInvitations[updatedInviteIndex].invitation = invitationStatus
                 setInvitations(updatedInvitations);
             })
             .catch(error => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                };
+                setError(error.message);
             });
     };
 
@@ -95,6 +91,15 @@ export function Invitations() {
                 </VStack>
 
                 <Menu variant="blank" />
+
+                <AlertPopup
+                    status="error"
+                    title="Erro ao carregar dados do usuário!"
+                    description={error}
+                    onClose={() => setError("")}
+                    isOpen={error !== ""}
+                />
+
             </VStack>}
         </>
     );

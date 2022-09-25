@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { User } from '../../@types';
 
-type AuthenticationState = {
+type AuthenticationSlice = {
     authenticated: boolean;
     token: string;
     user?: User;
@@ -13,7 +13,7 @@ const authenticationSlice = createSlice({
         authenticated: false,
         token: "",
         user: null
-    } as AuthenticationState,
+    } as AuthenticationSlice,
     reducers: {
         authenticate: (state, action: PayloadAction<{ token: string, user: User }>) => {
             return { authenticated: true, token: action.payload.token, user: action.payload.user }

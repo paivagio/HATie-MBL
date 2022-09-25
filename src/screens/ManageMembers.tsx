@@ -79,7 +79,7 @@ export function ManageMembers() {
                             mx={3}
                             h={450}
                             keyExtractor={item => item.id}
-                            renderItem={({ item }) => <SimpleListItem data={item} variant="member" onPress={() => navigation.navigate("editPatient", { patientId: item.id })} selectedId="" />}
+                            renderItem={({ item }) => <SimpleListItem data={item} variant="member" onPress={() => navigation.navigate('editMember', { memberId: item.id, institutionId: item.institutionId })} selectedId="" />}
                             showsVerticalScrollIndicator={false}
                             contentContainerStyle={{ paddingBottom: 100 }}
                             ListEmptyComponent={() => (

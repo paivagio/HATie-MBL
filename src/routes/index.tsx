@@ -1,11 +1,18 @@
 import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
+
 import { User } from '../@types';
 import { Loading } from '../components/Loading';
+
 import { SignIn } from '../screens/SignIn';
-import store from '../store/store';
+import { SignUp } from '../screens/SignUp';
 
 import { AppRoutes } from './app.routes';
+
+import store from '../store/store';
+
+const { Navigator, Screen } = createNativeStackNavigator();
 
 export function Routes() {
     const [loading, setIsLoading] = useState(true);
@@ -27,7 +34,12 @@ export function Routes() {
             {loading
                 ? <Loading />
                 : <NavigationContainer>
-                    {user ? <AppRoutes /> : <SignIn />}
+                    {user
+                        ? <AppRoutes />
+                        : <Navigator screenOptions={{ headerShown: false }}>
+                            <Screen name="signin" component={SignIn} />
+                            <Screen name="signup" component={SignUp} />
+                        </Navigator>}
                 </NavigationContainer>
             }
         </>

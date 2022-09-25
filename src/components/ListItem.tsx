@@ -1,9 +1,11 @@
 import { Box, Circle, HStack, Text, useTheme, VStack, Pressable, IPressableProps } from 'native-base';
-import { Buildings, UsersThree, UsersFour, PersonSimple, Hourglass, CircleWavyCheck, Bed, IdentificationBadge, ClockClockwise, ClockAfternoon } from 'phosphor-react-native';
+import { Buildings, Bug, UsersThree, UsersFour, PersonSimple, Hourglass, CircleWavyCheck, Bed, IdentificationBadge, ClockClockwise, ClockAfternoon } from 'phosphor-react-native';
+import { SummarizationStatus } from '../@types';
+import { categoryToColor } from '../screens/SummaryDetails';
 
 type SummaryTags = {
-    name: string;
-    type: 'Condition' | 'Procedure' | 'Substance';
+    token: string;
+    category: 'Problema' | 'Teste' | 'Ocorrencia' | 'DepartamentoClinico' | 'Tratamento';
 }
 
 export type ListItemProps = {
@@ -14,9 +16,12 @@ export type ListItemProps = {
     patientName?: string;
     lastUpdated?: string;
     createdOn?: string;
-    processed?: boolean;
+    status?: string;
     tags?: SummaryTags[];
     owned?: boolean;
+    memberId?: string;
+    memberPermissions?: number;
+    groupMemberId?: string;
 }
 
 type Props = IPressableProps & {
@@ -27,8 +32,8 @@ type Props = IPressableProps & {
 export function ListItem({ data, variant, ...rest }: Props) {
     const { colors } = useTheme();
     const itemColor = variant === 'institution' ? colors.orange[700] : variant === 'group' ? colors.blue[500] : variant === 'patient' ? colors.blue[300] : colors.blue[700];
-    const ItemIcon = variant === 'institution' ? Buildings : variant === 'group' ? UsersFour : variant === 'patient' ? PersonSimple : data.processed ? CircleWavyCheck : Hourglass;
-    const iconColor = ItemIcon === CircleWavyCheck ? colors.green[300] : ItemIcon === Hourglass ? colors.orange[700] : itemColor;
+    const ItemIcon = variant === 'institution' ? Buildings : variant === 'group' ? UsersFour : variant === 'patient' ? PersonSimple : data.status === SummarizationStatus.COMPLETED ? CircleWavyCheck : data.status === SummarizationStatus.PROCESSING ? Hourglass : Bug;
+    const iconColor = ItemIcon === CircleWavyCheck ? colors.green[300] : ItemIcon === Hourglass ? colors.orange[700] : ItemIcon === Bug ? colors.red[500] : itemColor;
 
     return (
         <Pressable {...rest}>
@@ -80,14 +85,14 @@ export function ListItem({ data, variant, ...rest }: Props) {
                         {data.tags.map(tag => {
                             return (
                                 <Box
-                                    key={tag.name}
-                                    bg={tag.type === 'Condition' ? '#1A0F92' : tag.type === 'Procedure' ? '#410F92' : '#920F3E'}
+                                    key={tag.token}
+                                    bg={categoryToColor[tag.category]}
                                     rounded="xl"
                                     py={1}
                                     px={3}
                                     mr={1.5}>
                                     <Text color="white" fontSize={10}>
-                                        {tag.name}
+                                        {tag.token}
                                     </Text>
                                 </Box>
                             )

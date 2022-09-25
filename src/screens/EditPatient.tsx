@@ -1,26 +1,45 @@
-import { Heading, HStack, Icon, useTheme, VStack } from 'native-base';
 import React, { useState } from 'react';
+import { Heading, HStack, Icon, useTheme, VStack } from 'native-base';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+
 import { Barbell, Calendar, IdentificationBadge, Ruler } from 'phosphor-react-native';
-import axios from 'axios';
 
 import { Button } from '../components/Button';
 import { Header } from '../components/Header';
 import { Loading } from '../components/Loading';
 import { Menu } from '../components/Menu';
 import { Input } from '../components/Input';
+import { Alert } from '../components/Alert';
+import { AlertPopup } from '../components/AlertPopup';
 
 import patientService from '../services/patientService';
 
-import { toDateFormat } from './InstitutionDetails';
+import { toBrazilianFormat, toISOFormat } from './NewPatient';
 
 type RouteParams = {
     patientId: string;
 };
 
+export const leaveNumbersOnly = (date: string) => {
+    const parsedDate = new Date(date);
+
+    const day = parsedDate.getDate().toString();
+    const month = (parsedDate.getMonth() + 1).toLocaleString();
+    const year = parsedDate.getFullYear().toString();
+
+    return `${day.length === 1 ? "0" + day : day}${month.length === 1 ? "0" + month : month}${year}`
+};
+
 export function EditPatient() {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isRequired, setIsRequired] = useState<boolean>(false);
+    const [invalidDate, setInvalidDate] = useState<boolean>(false);
+    const [error, setError] = useState<string>("");
+    const [isDeleting, setIsDeleting] = useState<boolean>(false);
+    const [isUpdating, setIsUpdating] = useState<boolean>(false);
+    const [confirmDeleteIntention, setConfirmDeleteIntention] = useState<boolean>(false);
+    const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
+    const [confirmUpdate, setConfirmUpdate] = useState<boolean>(false);
     const [name, setName] = useState<string>();
     const [birthdate, setBirthdate] = useState<string>();
     const [height, setHeight] = useState<string>();
@@ -38,17 +57,13 @@ export function EditPatient() {
                 .then(response => {
                     const patient = response.data;
                     setName(patient.fullname);
-                    setBirthdate(toDateFormat(patient.birthDate));
+                    setBirthdate(leaveNumbersOnly(patient.birthDate));
                     setHeight(patient.height?.toString() ?? "");
                     setWeight(patient.weight?.toString() ?? "");
                     setIsLoading(false);
                 })
                 .catch((error) => {
-                    if (axios.isAxiosError(error)) {
-                        console.log('error message: ', error.message);
-                    } else {
-                        console.log('unexpected error: ', error);
-                    }
+                    setError(error.message);
                     setIsLoading(false);
                 });
         }, [])
@@ -60,42 +75,41 @@ export function EditPatient() {
             return;
         };
 
-        if (!birthdate.match(/^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])[\/\-]\d{2}$/)) return;
-
         setIsRequired(false);
-        setIsLoading(true);
 
+        if (!toBrazilianFormat(birthdate).match(/^(0?[1-9]|[12][0-9]|3[01])[\/\-](0?[1-9]|1[012])[\/\-]\d{4}$/)) {
+            setInvalidDate(true);
+            return;
+        };
+
+        setInvalidDate(false);
+        setIsUpdating(true);
         patientService.patchPatient(
             patientId,
             name,
-            new Date(birthdate).toISOString(),
+            new Date(toISOFormat(birthdate)).toISOString(),
             parseFloat(height),
             parseFloat(weight)
         )
             .then(() => {
-                navigation.goBack();
+                setConfirmUpdate(true);
             })
             .catch((error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                }
+                setError(error.message);
+                setIsUpdating(false);
             });
     };
 
     const deletePatient = () => {
-        setIsLoading(true);
+        setConfirmDeleteIntention(false);
+        setIsDeleting(true);
         patientService.deletePatient(patientId)
             .then(() => {
-                navigation.goBack();
+                setConfirmDelete(true);
             })
             .catch((error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                }
+                setError(error.message);
+                setIsDeleting(false);
             });
     };
 
@@ -123,11 +137,11 @@ export function EditPatient() {
                         <Input
                             placeholder="Data de nascimento"
                             InputLeftElement={<Icon as={<Calendar color={colors.gray[300]} />} ml={4} />}
-                            onChangeText={setBirthdate}
-                            value={birthdate}
+                            onChangeText={value => setBirthdate(value.replace(/\//g, "").slice(0, 8))}
+                            value={toBrazilianFormat(birthdate)}
                             bg="white"
                             mb={3}
-                            isInvalid={isRequired && !birthdate}
+                            isInvalid={(isRequired && !birthdate) || invalidDate}
                         />
 
                         <Input
@@ -154,7 +168,8 @@ export function EditPatient() {
                                 variant="red"
                                 w="130"
                                 mt={5}
-                                onPress={() => deletePatient()}
+                                onPress={() => setConfirmDeleteIntention(true)}
+                                isLoading={isDeleting}
                             />
 
                             <Button
@@ -163,6 +178,7 @@ export function EditPatient() {
                                 w="130"
                                 mt={5}
                                 onPress={() => updatePatient()}
+                                isLoading={isUpdating}
                             />
 
                         </HStack>
@@ -172,6 +188,39 @@ export function EditPatient() {
                 </VStack>
 
                 <Menu variant="blank" />
+
+                <Alert
+                    title="Deseja realmente excluir o paciente?"
+                    description="Todos os dados vinculados serão perdidos."
+                    acceptButtonText="Sim"
+                    acceptButtonColor="red"
+                    cancelButtonText="Não"
+                    isOpen={confirmDeleteIntention}
+                    onCancel={() => setConfirmDeleteIntention(false)}
+                    onAccept={deletePatient}
+                />
+
+                <Alert
+                    title="Paciente excluído com sucesso!"
+                    acceptButtonText="Voltar"
+                    isOpen={confirmDelete}
+                    onAccept={() => navigation.goBack()}
+                />
+
+                <Alert
+                    title="Paciente atualizado com sucesso!"
+                    acceptButtonText="Voltar"
+                    isOpen={confirmUpdate}
+                    onAccept={() => navigation.goBack()}
+                />
+
+                <AlertPopup
+                    status="error"
+                    title="Tente novamente mais tarde!"
+                    description={error}
+                    onClose={() => setError("")}
+                    isOpen={error !== ""}
+                />
 
             </VStack>}
         </>

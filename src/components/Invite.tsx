@@ -28,7 +28,7 @@ export function Invite({ data, onAccept, onDecline }: Props) {
             <HStack alignItems="center" justifyContent="space-between" >
                 <Buildings size={24} color={colors.orange[700]} />
 
-                <Text color="gray.400" fontSize="md" ml={3} fontFamily="Roboto_500Medium">
+                <Text color="gray.400" fontSize="sm" ml={3} fontFamily="Roboto_500Medium" w={40} noOfLines={1}>
                     {data.Institution.name}
                 </Text>
             </HStack>

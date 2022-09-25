@@ -1,19 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { VStack, Heading, Icon, useTheme, FormControl } from 'native-base';
+import React, { useState } from 'react';
+import { VStack, Heading, Icon, useTheme, FormControl, HStack, Text, Pressable } from 'native-base';
 import { Envelope, Key, WarningCircle } from 'phosphor-react-native';
-import { useNavigation } from '@react-navigation/native';
 
 import Logo from '../assets/logo_text_dark.svg';
 
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
-import { useDispatch, useSelector } from '../hooks';
-import { StoreState } from '../store/store';
+import { useDispatch } from '../hooks';
+
 import authenticationService from '../services/authenticationService';
 import axios, { AxiosResponse } from 'axios';
 import { authenticate } from '../store/reducers/authenticationReducer';
+import { useNavigation } from '@react-navigation/native';
 
 export function SignIn() {
+    const navigation = useNavigation();
     const dispatch = useDispatch();
     const { colors } = useTheme();
 
@@ -35,7 +36,7 @@ export function SignIn() {
                 dispatch(authenticate({ token, user }));
             }).catch((error) => {
                 if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
+                    console.log('error message: ', error.response);
                 } else {
                     console.log('unexpected error: ', error);
                 };
@@ -48,7 +49,7 @@ export function SignIn() {
         <VStack flex={1} alignItems="center" bg="white" px={8} pt={24}>
             <Logo width={200} height={81} />
 
-            <Heading color="gray.600" fontSize="xl" mt={20} mb={6}>
+            <Heading color="gray.600" fontSize="xl" mt={20} mb={6} w="full">
                 Acesse sua conta
             </Heading>
 
@@ -70,8 +71,15 @@ export function SignIn() {
                 </FormControl.ErrorMessage>
             </FormControl>
 
-
             <Button title="Entrar" w="full" variant="green" onPress={handleSignIn} isLoading={isLoading} />
+
+            <HStack mt={40} w="full" alignItems="center" justifyContent="center">
+                <Text color="gray.400" fontSize="md" >Não possui uma conta ainda? </Text>
+                <Pressable onPress={() => navigation.navigate('signup')}>
+                    <Text color="green.700" fontSize="md" fontFamily="Roboto_500Medium">Cadastre-se</Text>
+                </Pressable>
+            </HStack>
+
         </VStack>
     )
 }

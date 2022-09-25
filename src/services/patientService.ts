@@ -5,7 +5,7 @@ export default {
     postPatient: async (
         id: string,
         fullname: string,
-        birthDate?: string,
+        birthdate?: string,
         height?: number,
         weight?: number,
         groupId?: string
@@ -13,7 +13,7 @@ export default {
         try {
             const data = await Api.post<Patient>(`institutions/${id}/patients`, {
                 fullname: fullname,
-                birthDate: birthDate,
+                birthdate: birthdate,
                 height: height,
                 weight: weight,
                 groupId: groupId
@@ -42,7 +42,7 @@ export default {
     patchPatient: async (
         id: string,
         fullname?: string,
-        birthDate?: string,
+        birthdate?: string,
         height?: number,
         weight?: number,
         groupId?: string,
@@ -51,7 +51,7 @@ export default {
         try {
             const data = await Api.patch<Patient>(`patients/${id}`, {
                 fullname: fullname,
-                birthDate: birthDate,
+                birthdate: birthdate,
                 height: height,
                 weight: weight,
                 groupId: groupId,

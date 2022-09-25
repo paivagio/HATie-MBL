@@ -42,6 +42,7 @@ export type Member = {
     updatedAt: string
     Institution?: Institution
     User?: User
+    GroupMember?: GroupMember[]
 };
 
 export type Group = {
@@ -67,19 +68,16 @@ export type GroupMember = {
 };
 
 export type Insights = {
-    tags: Array<{ name: string; type: 'Condition' | 'Procedure' | 'Substance' }>
-    highlightedTranscription: Array<{ words: string; category: string }>
+    tags: Array<{ token: string; category: 'Problema' | 'Teste' | 'Ocorrencia' | 'DepartamentoClinico' | 'Tratamento' }>
+    highlightedTranscription: Array<{ token: string; category: string }>
     structuredData: {
-        conditions: Array<string>
-        substances: {
-            medicines: Array<string>
-            other: Array<string>
-        };
-        procedures: {
-            imagingExams: Array<string>
-            laboratoryTests: Array<string>
-        }
+        clinicaldepartments: Array<string>
+        occurances: Array<string>
+        problems: Array<string>
+        tests: Array<string>
+        treatments: Array<string>
     }
+    status?: number
 };
 
 export type Patient = {
