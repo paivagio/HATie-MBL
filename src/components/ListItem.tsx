@@ -1,7 +1,15 @@
 import { Box, Circle, HStack, Text, useTheme, VStack, Pressable, IPressableProps } from 'native-base';
 import { Buildings, Bug, UsersThree, UsersFour, PersonSimple, Hourglass, CircleWavyCheck, Bed, IdentificationBadge, ClockClockwise, ClockAfternoon } from 'phosphor-react-native';
 import { SummarizationStatus } from '../@types';
-import { categoryToColor } from '../screens/SummaryDetails';
+
+const categoryToColor = {
+    Problema: '#D35400',
+    Teste: '#410F92',
+    Ocorrencia: '#920F3E',
+    Tratamento: '#28B463',
+    DepartamentoClinico: '#2E86C1',
+    Evidencia: '#45E9AB'
+}
 
 type SummaryTags = {
     token: string;
@@ -91,7 +99,7 @@ export function ListItem({ data, variant, ...rest }: Props) {
                                     py={1}
                                     px={3}
                                     mr={1.5}>
-                                    <Text color="white" fontSize={10}>
+                                    <Text color="white" fontSize={10} w={tag.token.length >= 14 ? 14 : undefined} noOfLines={1}>
                                         {tag.token}
                                     </Text>
                                 </Box>

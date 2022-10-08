@@ -30,6 +30,11 @@ instance.interceptors.request.use((config) => {
 instance.interceptors.response.use(
     (response) => response,
     (error) => { throw error }
+    // if (axios.isAxiosError(error)) {
+    //     console.log('error message: ', error.message);
+    // } else {
+    //     console.log('unexpected error: ', error);
+    // }
 );
 
 export default instance;

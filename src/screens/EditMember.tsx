@@ -1,22 +1,25 @@
-import { Center, FlatList, Heading, HStack, Text, useTheme, VStack } from 'native-base';
 import React, { useEffect, useState } from 'react';
+import { Center, FlatList, Heading, HStack, Text, useTheme, VStack } from 'native-base';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import { Barbell, Calendar, IdentificationBadge, MoonStars, Ruler, ShieldCheckered, Star, UserCircle } from 'phosphor-react-native';
-import axios from 'axios';
+
+import { MoonStars, ShieldCheckered, UserCircle } from 'phosphor-react-native';
 
 import { Button } from '../components/Button';
 import { Header } from '../components/Header';
 import { Loading } from '../components/Loading';
 import { Menu } from '../components/Menu';
-import { Input } from '../components/Input';
+import { SimpleListItem } from '../components/SimpleListItem';
+import { AlertPopup } from '../components/AlertPopup';
+import { Alert } from '../components/Alert';
 
 import memberService from '../services/memberService';
-
-import { toDateFormat } from './InstitutionDetails';
-import { Group, GroupMember, Member } from '../@types';
-import { SimpleListItem } from '../components/SimpleListItem';
 import institutionService from '../services/institutionService';
 import groupMemberService from '../services/groupMemberService';
+
+import { Group, GroupMember, Member } from '../@types';
+
+import { toBrazilianFormat } from './NewPatient';
+import { leaveNumbersOnly } from './EditPatient';
 
 type RouteParams = {
     memberId: string;
@@ -30,6 +33,12 @@ type AccessLevelGroup = GroupMember & {
 
 export function EditMember() {
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>("");
+    const [confirmPromoteUser, setConfirmPromoteUser] = useState<boolean>(false);
+    const [confirmDepromoteUser, setConfirmDepromoteUser] = useState<boolean>(false);
+    const [confirmRemoveUserIntention, setConfirmRemoveUserIntention] = useState<boolean>(false);
+    const [confirmRemoveUser, setConfirmRemoveUser] = useState<boolean>(false);
+    const [isRemoving, setIsRemoving] = useState<boolean>(false);
     const [reload, setReload] = useState<boolean>(false);
     const [memberData, setMemberData] = useState<Member>();
     const [institutionGroups, setInstitutionGroups] = useState<Group[]>();
@@ -52,20 +61,12 @@ export function EditMember() {
                             setIsLoading(false);
                         })
                         .catch((error) => {
-                            if (axios.isAxiosError(error)) {
-                                console.log('error message: ', error.message);
-                            } else {
-                                console.log('unexpected error: ', error);
-                            }
+                            setError(error.message);
                             setIsLoading(false);
                         });
                 })
                 .catch((error) => {
-                    if (axios.isAxiosError(error)) {
-                        console.log('error message: ', error.message);
-                    } else {
-                        console.log('unexpected error: ', error);
-                    }
+                    setError(error.message);
                     setIsLoading(false);
                 });
 
@@ -104,11 +105,7 @@ export function EditMember() {
                 setReload(!reload);
             })
             .catch((error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                }
+                setError(error.message);
             });
     }
 
@@ -128,11 +125,7 @@ export function EditMember() {
                 setReload(!reload);
             })
             .catch((error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                }
+                setError(error.message);
             });
     };
 
@@ -152,11 +145,7 @@ export function EditMember() {
                 setReload(!reload);
             })
             .catch((error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                }
+                setError(error.message);
             });
     };
 
@@ -173,25 +162,20 @@ export function EditMember() {
                 setReload(!reload);
             })
             .catch((error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                }
+                setError(error.message);
             });
     };
 
     const removeMember = () => {
+        setIsRemoving(true);
+        setConfirmRemoveUserIntention(false);
         memberService.deleteMember(memberId)
             .then(() => {
-                navigation.goBack();
+                setConfirmRemoveUser(true);
             })
             .catch((error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                }
+                setError(error.message);
+                setIsRemoving(false);
             });
     };
 
@@ -199,13 +183,10 @@ export function EditMember() {
         memberService.patchMember(memberId, 111)
             .then((response) => {
                 setMemberData({ ...memberData, ...response.data });
+                setConfirmPromoteUser(true);
             })
             .catch((error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                }
+                setError(error.message);
             });
     };
 
@@ -213,13 +194,10 @@ export function EditMember() {
         memberService.patchMember(memberId, 1)
             .then((response) => {
                 setMemberData({ ...memberData, ...response.data });
+                setConfirmDepromoteUser(true);
             })
             .catch((error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                }
+                setError(error.message);
             });
     };
 
@@ -247,7 +225,7 @@ export function EditMember() {
                                 </HStack>
 
                                 <Text color="gray.300" fontSize="sm" mt={2}>
-                                    Membro desde de {toDateFormat(memberData.acceptedAt)}
+                                    Membro desde de {toBrazilianFormat(leaveNumbersOnly(memberData.acceptedAt))}
                                 </Text>
                             </VStack>
                         </HStack>
@@ -265,7 +243,8 @@ export function EditMember() {
                             variant="red"
                             w="full"
                             mt={5}
-                            onPress={() => removeMember()}
+                            onPress={() => setConfirmRemoveUserIntention(true)}
+                            isLoading={isRemoving}
                         />
 
                         <Heading color="gray.600" fontSize="lg" mt={8} mb={4}>
@@ -306,6 +285,46 @@ export function EditMember() {
                 </VStack>
 
                 <Menu variant="blank" />
+
+                <Alert
+                    title="Membro promovido a moderador!"
+                    acceptButtonText="Ok"
+                    isOpen={confirmPromoteUser}
+                    onAccept={() => setConfirmPromoteUser(false)}
+                />
+
+                <Alert
+                    title="Membro não é mais um moderador!"
+                    acceptButtonText="Ok"
+                    isOpen={confirmDepromoteUser}
+                    onAccept={() => setConfirmDepromoteUser(false)}
+                />
+
+                <Alert
+                    title="Membro removido com sucesso!"
+                    acceptButtonText="Voltar"
+                    isOpen={confirmRemoveUser}
+                    onAccept={() => navigation.goBack()}
+                />
+
+                <Alert
+                    title="Deseja realmente remover o membro?"
+                    description="Todos os dados da instituição referentes ao membro serão excluídos."
+                    acceptButtonText="Sim"
+                    acceptButtonColor="red"
+                    cancelButtonText="Não"
+                    isOpen={confirmRemoveUserIntention}
+                    onCancel={() => setConfirmRemoveUserIntention(false)}
+                    onAccept={removeMember}
+                />
+
+                <AlertPopup
+                    status="error"
+                    title="Tente novamente mais tarde!"
+                    description={error}
+                    onClose={() => setError("")}
+                    isOpen={error !== ""}
+                />
 
             </VStack>}
         </>

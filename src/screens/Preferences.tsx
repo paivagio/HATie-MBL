@@ -22,6 +22,7 @@ export function Preferences() {
     const userId = store.user?.id;
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isUpdating, setIsUpdating] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
     const [confirmDeleteAccountIntention, setConfirmDeleteAccountIntention] = useState<boolean>(false);
     const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -51,6 +52,7 @@ export function Preferences() {
     }, []);
 
     const updatePreferences = () => {
+        setIsUpdating(true);
         const newPreferences = {
             notifications: notifications,
             darkmode: darkMode,
@@ -63,6 +65,7 @@ export function Preferences() {
             })
             .catch((error) => {
                 setError(error.message);
+                setIsUpdating(false);
             });
     };
 
@@ -129,25 +132,30 @@ export function Preferences() {
                             />
                         </HStack>
 
+
+                        <Button
+                            title="Excluir conta"
+                            variant="red"
+                            w="full"
+                            position="absolute"
+                            alignSelf="center"
+                            bottom={-220}
+                            onPress={() => setConfirmDeleteAccountIntention(true)}
+                            isLoading={isDeleting}
+                        />
+
+                        <Button
+                            title="Salvar"
+                            variant="green"
+                            w="full"
+                            position="absolute"
+                            alignSelf="center"
+                            bottom={-290}
+                            onPress={() => updatePreferences()}
+                            isLoading={isUpdating}
+                        />
+
                     </VStack>
-
-                    <Button
-                        title="Salvar"
-                        variant="green"
-                        w="153"
-                        ml="160"
-                        mt={5}
-                        onPress={() => updatePreferences()}
-                    />
-
-                    <Button
-                        title="Excluir conta"
-                        variant="red"
-                        w="full"
-                        onPress={() => setConfirmDeleteAccountIntention(true)}
-                        mt={200}
-                        isLoading={isDeleting}
-                    />
 
                 </VStack>
 

@@ -1,19 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { VStack, HStack, useTheme, Text, Circle } from 'native-base';
-import { Microphone } from 'phosphor-react-native';
 import { Audio, AVPlaybackStatus } from 'expo-av';
+
+import { Microphone } from 'phosphor-react-native';
 
 import { Menu } from '../components/Menu';
 import { Button } from '../components/Button';
 import { Player } from '../components/Player';
-import summarizationService from '../services/summarizationService';
-import axios from 'axios';
 import { Loading } from '../components/Loading';
+import { Alert } from '../components/Alert';
+import { AlertPopup } from '../components/AlertPopup';
+
+import summarizationService from '../services/summarizationService';
 
 type RouteParams = {
     patientId: string;
     patientTitle: string;
+    groupId: string;
+    groupMemberId: string;
 };
 
 export function NewRecording() {
@@ -26,13 +31,18 @@ export function NewRecording() {
     const [recordingTime, setRecordingTime] = useState<number>(0);
     const [recordedTime, setRecordedTime] = useState<number>(0);
     const [playingTime, setPlayingTime] = useState<number>(0);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+
+    const [error, setError] = useState<string>("");
+    const [isSending, setIsSending] = useState<boolean>(false);
+    const [confirmRestartIntention, setConfirmRestartIntention] = useState<boolean>(false);
+    const [confirmCancelIntention, setConfirmCancelIntention] = useState<boolean>(false);
+    const [confirmSent, setConfirmSent] = useState<boolean>(false);
 
     const navigation = useNavigation();
     const { colors } = useTheme();
     const route = useRoute();
 
-    const { patientId, patientTitle } = route.params as RouteParams;
+    const { patientId, patientTitle, groupId, groupMemberId } = route.params as RouteParams;
 
     useEffect(() => {
         getAudioPermission();
@@ -51,11 +61,12 @@ export function NewRecording() {
     const goBack = async () => {
         if (recording) await recording.stopAndUnloadAsync();
         if (sound) await sound.unloadAsync();
-        navigation.navigate('patientDetails', { patientId, patientTitle });
+        navigation.navigate('patientDetails', { patientId, patientTitle, groupId, groupMemberId });
     };
 
     const restart = async () => {
         if (sound) await unmountRecordedAudio();
+        setConfirmRestartIntention(false);
         setRecordingURI(undefined);
         setRecordingTime(0);
         setRecordedTime(0);
@@ -100,7 +111,7 @@ export function NewRecording() {
                 setIsRecording(true);
             }
         } catch (error) {
-            console.log(error);
+            setError(error.message);
         }
     };
 
@@ -108,11 +119,12 @@ export function NewRecording() {
         try {
             setRecordedTime(recordingTime);
             await recording.stopAndUnloadAsync();
+            console.log(recording.getURI() ?? "");
             setRecordingURI(recording.getURI() ?? "");
             setIsRecording(false);
             setRecording(undefined);
         } catch (error) {
-            console.log(error);
+            setError(error.message);
         }
     };
 
@@ -131,7 +143,7 @@ export function NewRecording() {
                 sound.playFromPositionAsync(playingTime);
             }
         } catch (error) {
-            console.log(error);
+            setError(error.message);
         }
     };
 
@@ -139,7 +151,7 @@ export function NewRecording() {
         try {
             await sound.pauseAsync();
         } catch (error) {
-            console.log(error);
+            setError(error.message);
         }
     };
 
@@ -154,7 +166,7 @@ export function NewRecording() {
             );
             setSound(soundObj);
         } catch (error) {
-            console.log(error);
+            setError(error.message);
         }
     }
 
@@ -166,88 +178,120 @@ export function NewRecording() {
                 setSound(undefined);
             }
         } catch (error) {
-            console.log(error);
+            setError(error.message);
         }
     };
 
     const submit = async () => {
-        setIsLoading(true);
+        setIsSending(true);
         summarizationService.postSummarization(patientId, recordingURI)
-            .then(response => {
-                goBack();
+            .then(() => {
+                setIsSending(false);
+                setConfirmSent(true);
             })
             .catch(error => {
-                console.log(error);
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.response);
-                } else {
-                    console.log('unexpected error: ', error);
-                };
-                goBack();
+                setError(error.message);
+                setIsSending(false);
             });
     };
 
     return (
-        <>
-            {isLoading ? <Loading /> : <VStack flex={1} bg="background">
-                <HStack
-                    w="full"
-                    justifyContent="center"
-                    alignItems="center"
-                    bg="white"
-                    pt={12}
-                    pb={1}
-                    px={4}
-                >
-                    <Text color="gray.500" fontSize="md" mb={3}>Nova entrada de áudio</Text>
+        <VStack flex={1} bg="background">
+            <HStack
+                w="full"
+                justifyContent="center"
+                alignItems="center"
+                bg="white"
+                pt={12}
+                pb={1}
+                px={4}
+            >
+                <Text color="gray.500" fontSize="md" mb={3}>Nova entrada de áudio</Text>
+            </HStack>
+
+            <VStack
+                flex={1}
+                px={6}
+                alignItems="center"
+            >
+                <Circle bg="gray.300" h={120} w={120} mt={110} mb={70}>
+                    <Microphone size={72} color={isRecording ? colors.green[300] : colors.white} />
+                </Circle>
+
+                <Player
+                    value={recordingTime}
+                    min={0}
+                    max={180000}
+                    showButtons={false}
+                    show={isRecording}
+                    mb={30}
+                />
+
+                <Player
+                    value={playingTime}
+                    min={0}
+                    max={recordedTime}
+                    showButtons={true}
+                    onPause={pauseRecordedAudio}
+                    onPlay={playRecordedAudio}
+                    onRepeat={restartRecordedAudio}
+                    show={recordingURI !== undefined}
+                    mb={30}
+                />
+
+                <HStack w="full" justifyContent="space-between">
+                    <Button title="Cancelar" variant="red" w="153" onPress={() => setConfirmCancelIntention(true)} />
+                    {isRecording
+                        ? <Button title="Parar" variant="gray" w="153" onPress={() => stopRecording()} />
+                        : (recordingURI
+                            ? <Button title="Reiniciar" variant="gray" w="153" onPress={() => setConfirmRestartIntention(true)} />
+                            : <Button title="Gravar" variant="green" w="153" onPress={() => startRecording()} />
+                        )
+                    }
                 </HStack>
+                {recordingURI && <Button title="Enviar" variant="green" w="full" mt={4} onPress={() => submit()} isLoading={isSending} />}
+            </VStack>
 
-                <VStack
-                    flex={1}
-                    px={6}
-                    alignItems="center"
-                >
-                    <Circle bg="gray.300" h={120} w={120} mt={110} mb={70}>
-                        <Microphone size={72} color={isRecording ? colors.green[300] : colors.white} />
-                    </Circle>
+            <Menu variant="blank" />
 
-                    <Player
-                        value={recordingTime}
-                        min={0}
-                        max={180000}
-                        showButtons={false}
-                        show={isRecording}
-                        mb={30}
-                    />
+            <Alert
+                title="Deseja realmente cancelar a gravação?"
+                description="O áudio gravado será perdido."
+                acceptButtonText="Sim"
+                acceptButtonColor="red"
+                cancelButtonText="Não"
+                isOpen={confirmCancelIntention}
+                onCancel={() => setConfirmCancelIntention(false)}
+                onAccept={goBack}
+            />
 
-                    <Player
-                        value={playingTime}
-                        min={0}
-                        max={recordedTime}
-                        showButtons={true}
-                        onPause={pauseRecordedAudio}
-                        onPlay={playRecordedAudio}
-                        onRepeat={restartRecordedAudio}
-                        show={recordingURI !== undefined}
-                        mb={30}
-                    />
+            <Alert
+                title="Deseja realmente reiniciar a gravação?"
+                description="O áudio gravado será perdido."
+                acceptButtonText="Sim"
+                acceptButtonColor="red"
+                cancelButtonText="Não"
+                isOpen={confirmRestartIntention}
+                onCancel={() => setConfirmRestartIntention(false)}
+                onAccept={restart}
+            />
 
-                    <HStack w="full" justifyContent="space-between">
-                        <Button title="Cancelar" variant="red" w="153" onPress={() => goBack()} />
-                        {isRecording
-                            ? <Button title="Parar" variant="gray" w="153" onPress={() => stopRecording()} />
-                            : (recordingURI
-                                ? <Button title="Reiniciar" variant="gray" w="153" onPress={() => restart()} />
-                                : <Button title="Gravar" variant="green" w="153" onPress={() => startRecording()} />
-                            )
-                        }
-                    </HStack>
-                    {recordingURI && <Button title="Enviar" variant="green" w="full" mt={4} onPress={() => submit()} />}
-                </VStack>
+            <Alert
+                title="Áudio enviado com sucesso!"
+                acceptButtonText="Voltar"
+                isOpen={confirmSent}
+                onAccept={() => goBack()}
+            />
 
-                <Menu variant="blank" />
-            </VStack>}
-        </>
+            <AlertPopup
+                status="error"
+                title="Tente novamente mais tarde!"
+                description={error}
+                onClose={() => setError("")}
+                isOpen={error !== ""}
+            />
+
+        </VStack>
 
     );
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { HStack, VStack, useTheme, Text, Heading, FlatList, Center, Circle } from 'native-base';
+
 import { SmileyMeh, Bed, UsersThree, Calendar, UsersFour } from 'phosphor-react-native';
 
 import { ListItem, ListItemProps } from '../components/ListItem';
@@ -9,13 +10,17 @@ import { Header } from '../components/Header';
 import { Button } from '../components/Button';
 import { Group, GroupMember } from '../@types';
 import { Loading } from '../components/Loading';
+import { AlertPopup } from '../components/AlertPopup';
+
 import groupService from '../services/groupService';
-import { toDateFormat } from './InstitutionDetails';
-import { useDispatch, useSelector } from '../hooks';
-import { StoreState } from '../store/store';
 import groupMemberService from '../services/groupMemberService';
+
+import { StoreState } from '../store/store';
+import { useDispatch, useSelector } from '../hooks';
 import { setGroupPermissions } from '../store/reducers/authorizationReducer';
 
+import { toBrazilianFormat } from './NewPatient';
+import { leaveNumbersOnly } from './EditPatient';
 
 type RouteParams = {
     groupId: string;
@@ -35,6 +40,7 @@ export function GroupDetails() {
     const [groupMemberData, setGroupMemberData] = useState<GroupMember>(null);
     const [patients, setPatients] = useState<ListItemProps[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>("");
 
     const navigation = useNavigation();
     const dispatch = useDispatch();
@@ -56,12 +62,12 @@ export function GroupDetails() {
                                 setGroupMemberData(response.data);
                             })
                             .catch(error => {
-                                console.log(error);
+                                setError(error.message);
                             });
                     }
                 })
                 .catch(error => {
-                    console.log(error);
+                    setError(error.message);
                     setIsLoading(false);
                 });
         }, [])
@@ -89,7 +95,7 @@ export function GroupDetails() {
     }, [groupMemberData]);
 
     const handleOpenDetails = (patientId: string, patientTitle: string) => {
-        navigation.navigate('patientDetails', { patientId, patientTitle });
+        navigation.navigate('patientDetails', { patientId, patientTitle, groupId, groupMemberId });
     };
 
     const handleAddPatientToGroup = () => {
@@ -136,7 +142,7 @@ export function GroupDetails() {
                                 </HStack>
                                 <HStack w="full" alignItems="center">
                                     <Calendar size={18} color={colors.blue[500]} />
-                                    <Text ml={2} fontSize="xs">{toDateFormat(groupData.createdAt)}</Text>
+                                    <Text ml={2} fontSize="xs">{toBrazilianFormat(leaveNumbersOnly(groupData.createdAt))}</Text>
                                 </HStack>
                             </VStack>
 
@@ -177,6 +183,15 @@ export function GroupDetails() {
                 </VStack>
 
                 <Menu variant={(isOwner || isModerator || canWrite) ? "patient" : "blank"} onPress={() => { (isOwner || isModerator || canWrite) ? handleAddPatientToGroup() : {} }} />
+
+                <AlertPopup
+                    status="error"
+                    title="Tente novamente mais tarde!"
+                    description={error}
+                    onClose={() => setError("")}
+                    isOpen={error !== ""}
+                />
+
             </VStack>}
         </>
     );

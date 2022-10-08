@@ -107,28 +107,29 @@ export function ManageInstitution() {
                             onPress={() => navigation.navigate("managePatients", { institutionId })}
                         />
 
+                        <Button
+                            title="Excluir instituição"
+                            variant="red"
+                            w="full"
+                            position="absolute"
+                            alignSelf="center"
+                            bottom={-220}
+                            onPress={() => setConfirmDeleteIntention(true)}
+                            isLoading={isDeleting}
+                        />
+
+                        <Button
+                            title="Salvar"
+                            variant="orange"
+                            w="full"
+                            position="absolute"
+                            alignSelf="center"
+                            bottom={-290}
+                            onPress={() => updateInstitution()}
+                            isLoading={isUpdating}
+                        />
+
                     </VStack>
-
-                    <Button
-                        title="Salvar"
-                        variant="orange"
-                        w="153"
-                        ml="160"
-                        mt={8}
-                        onPress={() => updateInstitution()}
-                        isLoading={isUpdating}
-                    />
-
-                    <Button
-                        title="Excluir instituição"
-                        variant="red"
-                        w="full"
-                        position="absolute"
-                        alignSelf="center"
-                        bottom={10}
-                        onPress={() => setConfirmDeleteIntention(true)}
-                        isLoading={isDeleting}
-                    />
 
                 </VStack>
 

@@ -1,14 +1,16 @@
-import { Heading, Icon, useTheme, VStack } from 'native-base';
 import React, { useState } from 'react';
+import { Heading, Icon, useTheme, VStack } from 'native-base';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+
 import { Article, IdentificationBadge } from 'phosphor-react-native';
-import axios from 'axios';
 
 import { Button } from '../components/Button';
 import { Header } from '../components/Header';
 import { Loading } from '../components/Loading';
 import { Menu } from '../components/Menu';
 import { Input } from '../components/Input';
+import { Alert } from '../components/Alert';
+import { AlertPopup } from '../components/AlertPopup';
 
 import groupService from '../services/groupService';
 
@@ -18,6 +20,11 @@ type RouteParams = {
 
 export function ManageGroup() {
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>("");
+    const [isDeleting, setIsDeleting] = useState<boolean>(false);
+    const [isUpdating, setIsUpdating] = useState<boolean>(false);
+    const [confirmDeleteIntention, setConfirmDeleteIntention] = useState<boolean>(false);
+    const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
     const [name, setName] = useState<string>("");
     const [description, setDescription] = useState<string>("")
 
@@ -36,30 +43,36 @@ export function ManageGroup() {
                     setIsLoading(false);
                 })
                 .catch((error) => {
-                    if (axios.isAxiosError(error)) {
-                        console.log('error message: ', error.message);
-                    } else {
-                        console.log('unexpected error: ', error);
-                    }
+                    setError(error.message);
                     setIsLoading(false);
                 });
         }, [])
     );
 
     const updateGroup = () => {
-        setIsLoading(true);
+        setIsUpdating(true);
         groupService.patchGroup(groupId, name, description)
             .then(() => {
                 navigation.goBack();
             })
             .catch((error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                }
+                setError(error.message);
+                setIsUpdating(false);
             });
     };
+
+    const deleteGroup = () => {
+        setConfirmDeleteIntention(false);
+        setIsDeleting(true);
+        groupService.deleteGroup(groupId)
+            .then(() => {
+                setConfirmDelete(true);
+            })
+            .catch((error) => {
+                setError(error.message);
+                setIsDeleting(false);
+            });
+    }
 
     return (
         <>
@@ -97,20 +110,59 @@ export function ManageGroup() {
                             onPress={() => navigation.navigate('manageGroupMembers', { groupId })}
                         />
 
-                    </VStack>
+                        <Button
+                            title="Excluir grupo"
+                            variant="red"
+                            w="full"
+                            position="absolute"
+                            alignSelf="center"
+                            bottom={-220}
+                            onPress={() => setConfirmDeleteIntention(true)}
+                            isLoading={isDeleting}
+                        />
 
-                    <Button
-                        title="Salvar"
-                        variant="darkblue"
-                        w="153"
-                        ml="160"
-                        mt={8}
-                        onPress={() => updateGroup()}
-                    />
+                        <Button
+                            title="Salvar"
+                            variant="darkblue"
+                            w="full"
+                            position="absolute"
+                            alignSelf="center"
+                            bottom={-290}
+                            onPress={() => updateGroup()}
+                            isLoading={isUpdating}
+                        />
+
+                    </VStack>
 
                 </VStack>
 
                 <Menu variant="blank" />
+
+                <Alert
+                    title="Deseja realmente excluir o grupo?"
+                    description="Todos os dados vinculados serão perdidos."
+                    acceptButtonText="Sim"
+                    acceptButtonColor="red"
+                    cancelButtonText="Não"
+                    isOpen={confirmDeleteIntention}
+                    onCancel={() => setConfirmDeleteIntention(false)}
+                    onAccept={deleteGroup}
+                />
+
+                <Alert
+                    title="Grupo excluído com sucesso!"
+                    acceptButtonText="Voltar"
+                    isOpen={confirmDelete}
+                    onAccept={() => navigation.navigate('home')}
+                />
+
+                <AlertPopup
+                    status="error"
+                    title="Tente novamente mais tarde!"
+                    description={error}
+                    onClose={() => setError("")}
+                    isOpen={error !== ""}
+                />
 
             </VStack>}
         </>

@@ -1,18 +1,19 @@
-import { Center, Heading, Icon, useTheme, VStack, Text, FlatList } from 'native-base';
 import React, { useState } from 'react';
+import { Center, Heading, Icon, useTheme, VStack, Text, FlatList } from 'native-base';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
+
 import { MagnifyingGlass, MoonStars } from 'phosphor-react-native';
-import axios from 'axios';
 
 import { Header } from '../components/Header';
 import { Loading } from '../components/Loading';
 import { Menu } from '../components/Menu';
 import { Input } from '../components/Input';
 import { SimpleListItem } from '../components/SimpleListItem';
-
-import { GroupMember } from '../@types';
+import { AlertPopup } from '../components/AlertPopup';
 
 import groupMemberService from '../services/groupMemberService';
+
+import { GroupMember } from '../@types';
 
 type RouteParams = {
     groupId: string;
@@ -20,6 +21,7 @@ type RouteParams = {
 
 export function ManageGroupMembers() {
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>("");
     const [search, setSearch] = useState<string>("");
     const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
 
@@ -38,11 +40,7 @@ export function ManageGroupMembers() {
                     setIsLoading(false);
                 })
                 .catch((error) => {
-                    if (axios.isAxiosError(error)) {
-                        console.log('error message: ', error.message);
-                    } else {
-                        console.log('unexpected error: ', error);
-                    }
+                    setError(error.message);
                     setIsLoading(false);
                 });
         }, [])
@@ -92,6 +90,14 @@ export function ManageGroupMembers() {
                     </VStack>
 
                     <Menu variant="blank" onPress={() => { }} />
+
+                    <AlertPopup
+                        status="error"
+                        title="Tente novamente mais tarde!"
+                        description={error}
+                        onClose={() => setError("")}
+                        isOpen={error !== ""}
+                    />
 
                 </VStack>}
         </>

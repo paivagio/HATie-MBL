@@ -1,17 +1,19 @@
-import { Center, Heading, Icon, useTheme, VStack, Text, FlatList } from 'native-base';
 import React, { useState } from 'react';
+import { Center, Heading, Icon, useTheme, VStack, Text, FlatList } from 'native-base';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+
 import { MagnifyingGlass, MoonStars } from 'phosphor-react-native';
-import axios from 'axios';
 
 import { Header } from '../components/Header';
 import { Loading } from '../components/Loading';
 import { Menu } from '../components/Menu';
 import { Input } from '../components/Input';
 import { SimpleListItem } from '../components/SimpleListItem';
+import { AlertPopup } from '../components/AlertPopup';
+
+import memberService from '../services/memberService';
 
 import { Member } from '../@types';
-import memberService from '../services/memberService';
 
 type RouteParams = {
     institutionId: string;
@@ -19,6 +21,7 @@ type RouteParams = {
 
 export function ManageMembers() {
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>("");
     const [search, setSearch] = useState<string>("");
     const [members, setMembers] = useState<Member[]>([]);
 
@@ -40,11 +43,7 @@ export function ManageMembers() {
                     setIsLoading(false);
                 })
                 .catch((error) => {
-                    if (axios.isAxiosError(error)) {
-                        console.log('error message: ', error.message);
-                    } else {
-                        console.log('unexpected error: ', error);
-                    }
+                    setError(error.message);
                     setIsLoading(false);
                 });
         }, [])
@@ -77,11 +76,11 @@ export function ManageMembers() {
                         <FlatList
                             data={filteredMembers}
                             mx={3}
-                            h={450}
+                            h={170}
                             keyExtractor={item => item.id}
                             renderItem={({ item }) => <SimpleListItem data={item} variant="member" onPress={() => navigation.navigate('editMember', { memberId: item.id, institutionId: item.institutionId })} selectedId="" />}
                             showsVerticalScrollIndicator={false}
-                            contentContainerStyle={{ paddingBottom: 100 }}
+                            contentContainerStyle={{ paddingBottom: 50 }}
                             ListEmptyComponent={() => (
                                 <Center>
                                     <MoonStars color={colors.gray[300]} size={40} />
@@ -105,11 +104,11 @@ export function ManageMembers() {
                         <FlatList
                             data={invitedMembers}
                             mx={3}
-                            h={450}
+                            h={170}
                             keyExtractor={item => item.id}
                             renderItem={({ item }) => <SimpleListItem data={item} variant="memberPending" onPress={() => { }} selectedId="" />}
                             showsVerticalScrollIndicator={false}
-                            contentContainerStyle={{ paddingBottom: 100 }}
+                            contentContainerStyle={{ paddingBottom: 50 }}
                             ListEmptyComponent={() => (
                                 <Center>
                                     <MoonStars color={colors.gray[300]} size={40} />
@@ -124,6 +123,14 @@ export function ManageMembers() {
                 </VStack>
 
                 <Menu variant="member" onPress={() => handleNewMember()} />
+
+                <AlertPopup
+                    status="error"
+                    title="Tente novamente mais tarde!"
+                    description={error}
+                    onClose={() => setError("")}
+                    isOpen={error !== ""}
+                />
 
             </VStack>}
         </>

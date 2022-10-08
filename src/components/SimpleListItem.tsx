@@ -49,7 +49,7 @@ export function SimpleListItem({ data, variant, selectedId, onAdd, onUpgrade, on
                         <Box h="full" w={2} bg={itemColor} />
 
                         <HStack flex={1} my={3} ml={4} alignItems="center">
-                            <Text color={textColor} fontSize="sm" w={20} noOfLines={1}>
+                            <Text color={textColor} fontSize="sm" w={variant === "group" ? 20 : "full"} noOfLines={1}>
                                 {data.name ?? data.fullname ?? data.User?.fullname ?? data.Member?.User.fullname ?? ""}
                             </Text>
                             {variant !== 'group'

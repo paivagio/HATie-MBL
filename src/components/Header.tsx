@@ -4,9 +4,10 @@ import { CaretLeft } from 'phosphor-react-native';
 
 type Props = ITextProps & {
     title: string;
+    customGoBack?: Function;
 }
 
-export function Header({ title, ...rest }: Props) {
+export function Header({ title, customGoBack, ...rest }: Props) {
     const navigation = useNavigation();
     const { colors } = useTheme();
 
@@ -23,7 +24,7 @@ export function Header({ title, ...rest }: Props) {
 
             <IconButton
                 icon={<CaretLeft size={26} color={colors.gray[300]} />}
-                onPress={() => navigation.goBack()}
+                onPress={() => { customGoBack ? customGoBack() : navigation.goBack() }}
             />
 
             <Text

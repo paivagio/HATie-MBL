@@ -8,9 +8,9 @@ export declare global {
             invitations: undefined;
             institutionDetails: { institutionId: string, isOwner: boolean, memberId?: string, memberPermissions?: number };
             groupDetails: { groupId: string, groupMemberId: string };
-            patientDetails: { patientId: string, patientTitle: string };
+            patientDetails: { patientId: string, patientTitle: string, groupId: string, groupMemberId: string };
             summaryDetails: { summaryId: string, summaryTitle: string };
-            newRecording: { patientId: string, patientTitle: string };
+            newRecording: { patientId: string, patientTitle: string, groupId: string, groupMemberId: string };
             newInstitution: { ownerId: string };
             newGroup: { institutionId: string };
             addPatientToGroup: { groupId: string, institutionId: string };

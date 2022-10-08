@@ -9,11 +9,14 @@ import { Header } from '../components/Header';
 import { Button } from '../components/Button';
 import { Loading } from '../components/Loading';
 import { GroupMember, Institution } from '../@types';
-import { useDispatch, useSelector } from '../hooks';
+import { useDispatch } from '../hooks';
 
 import institutionService from '../services/institutionService';
 import { setInstitutionPermissions } from '../store/reducers/authorizationReducer';
 import memberService from '../services/memberService';
+import { AlertPopup } from '../components/AlertPopup';
+import { toBrazilianFormat } from './NewPatient';
+import { leaveNumbersOnly } from './EditPatient';
 
 type RouteParams = {
     institutionId: string;
@@ -32,6 +35,7 @@ export function InstitutionDetails() {
     const [memberGroupMemberships, setMemberGroupMemberships] = useState<GroupMember[]>(null);
     const [groups, setGroups] = useState<ListItemProps[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>("");
 
     const navigation = useNavigation();
     const { colors } = useTheme();
@@ -52,14 +56,16 @@ export function InstitutionDetails() {
                                 setMemberGroupMemberships(response.data.GroupMember);
                             })
                             .catch(error => {
-                                console.log(error);
+                                setError(error.message);
+                                setMemberGroupMemberships([]);
                             });
                     } else {
                         setMemberGroupMemberships([]);
                     }
                 })
                 .catch(error => {
-                    console.log(error);
+                    setError(error.message);
+                    setIsLoading(false);
                 });
         }, [])
     );
@@ -142,7 +148,7 @@ export function InstitutionDetails() {
                                 </HStack>
                                 <HStack w="full" alignItems="center">
                                     <Calendar size={18} color={colors.orange[700]} />
-                                    <Text ml={2} fontSize="xs">{toDateFormat(institutionData.createdAt)}</Text>
+                                    <Text ml={2} fontSize="xs">{toBrazilianFormat(leaveNumbersOnly(institutionData.createdAt))}</Text>
                                 </HStack>
                             </VStack>
 
@@ -183,6 +189,15 @@ export function InstitutionDetails() {
                 </VStack>
 
                 <Menu variant={(isOwner || isModerator) ? "group" : "blank"} onPress={() => (isOwner || isModerator) ? handleNewGroup() : {}} />
+
+                <AlertPopup
+                    status="error"
+                    title="Tente novamente mais tarde!"
+                    description={error}
+                    onClose={() => setError("")}
+                    isOpen={error !== ""}
+                />
+
             </VStack>}
         </>
     );

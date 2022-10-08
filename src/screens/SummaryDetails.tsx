@@ -1,14 +1,18 @@
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Heading, HStack, VStack, Text, useTheme, Box, ScrollView, IconButton, Center } from 'native-base';
 import { Bug, CircleWavyCheck, HighlighterCircle, Hourglass, Smiley, SmileySad, Tag } from 'phosphor-react-native';
 import React, { useEffect, useState } from 'react';
 import { Summarization, SummarizationStatus } from '../@types';
+import { AlertPopup } from '../components/AlertPopup';
 import { Button } from '../components/Button';
 import { FindingsTable } from '../components/FindingsTable';
 import { Header } from '../components/Header';
 import { Loading } from '../components/Loading';
 import { Menu } from '../components/Menu';
+import { SmallPlayer } from '../components/SmallPlayer';
 import summarizationService from '../services/summarizationService';
+import { toDateFormatLong } from './PatientDetails';
+import * as FileSystem from 'expo-file-system';
 
 type RouteParams = {
     summaryId: string;
@@ -26,10 +30,13 @@ export const categoryToColor = {
 
 export function SummaryDetails() {
     const [data, setData] = useState<Summarization>(null);
+    const [downloadedAudioPath, setDownloadedAudioPath] = useState<string>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [showTags, setShowTags] = useState<boolean>(false);
+    const [error, setError] = useState<string>("");
 
     const { colors } = useTheme();
+    const navigation = useNavigation();
     const route = useRoute();
 
     const tagIconColor = showTags ? "white" : colors.gray[300];
@@ -47,27 +54,39 @@ export function SummaryDetails() {
         summarizationService.getSummarization(summaryId)
             .then(response => {
                 setData(response.data);
-                setIsLoading(false);
+                if (!response.data.audioPath) {
+                    setIsLoading(false);
+                    return;
+                }
+
+                const downloadURI = "https://storage.googleapis.com" + response.data.audioPath.slice(4);
+                FileSystem.downloadAsync(downloadURI, FileSystem.cacheDirectory + 'Audio/audioFile.m4a')
+                    .then(({ uri }) => {
+                        setDownloadedAudioPath(uri);
+                        setIsLoading(false);
+                    })
+                    .catch(error => {
+                        setError(error.message);
+                        setIsLoading(false);
+                    })
             })
             .catch(error => {
-                console.log(error);
+                setError(error.message);
                 setIsLoading(false);
             });
     }, []);
 
-    const toDateFormatLong = (dateString: string) => {
-        const date = new Date(dateString);
-        const stringDate = date.toLocaleDateString('pt-BR');
-        const stringHour = date.getHours();
-        return `${stringDate} às ${stringHour}h`;
-    };
+    const goBack = async () => {
+        if (downloadedAudioPath) await FileSystem.deleteAsync(downloadedAudioPath);
+        navigation.goBack();
+    }
 
     return (
         <>
             {isLoading
                 ? <Loading />
                 : <VStack flex={1} bg="background">
-                    <Header title="Detalhes da sumarização" mr={75} />
+                    <Header title="Detalhes da sumarização" mr={75} customGoBack={goBack} />
 
                     <HStack
                         w="114%"
@@ -146,6 +165,13 @@ export function SummaryDetails() {
                                         })}
                                     </HStack>
 
+                                    <SmallPlayer
+                                        recordingURI={downloadedAudioPath}
+                                        setError={setError}
+                                        show={downloadedAudioPath !== null}
+                                        mt={4}
+                                    />
+
                                     <VStack
                                         w="full"
                                         bg="white"
@@ -154,6 +180,7 @@ export function SummaryDetails() {
                                         px={5}
                                         my={4}
                                     >
+
                                         <HStack w="full" alignItems="center" justifyContent="space-between" mb={3}>
                                             <VStack>
                                                 <Heading fontSize="md" mb={2}>Transcrição</Heading>
@@ -230,6 +257,15 @@ export function SummaryDetails() {
                     </ScrollView>
 
                     <Menu variant="blank" />
+
+                    <AlertPopup
+                        status="error"
+                        title="Tente novamente mais tarde!"
+                        description={error}
+                        onClose={() => setError("")}
+                        isOpen={error !== ""}
+                    />
+
                 </VStack>}
         </>
     );

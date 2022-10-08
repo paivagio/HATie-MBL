@@ -6,16 +6,17 @@ type Props = IAlertProps & {
     description?: string;
     isOpen: boolean;
     onClose: Function;
+    topMargin?: number;
 }
 
-export const AlertPopup = ({ isOpen, onClose, status, title, description, ...rest }: Props) => {
+export const AlertPopup = ({ isOpen, onClose, status, title, description, topMargin = 24, ...rest }: Props) => {
 
     return (
         <Center
             opacity={isOpen ? 1 : 0}
             position="absolute"
             zIndex={1}
-            top={24}
+            top={topMargin}
             alignSelf="center"
             w="full"
         >

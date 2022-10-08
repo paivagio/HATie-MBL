@@ -13,6 +13,8 @@ import { SimpleListItem } from '../components/SimpleListItem';
 
 import patientService from '../services/patientService';
 import { Patient } from '../@types';
+import { Alert } from '../components/Alert';
+import { AlertPopup } from '../components/AlertPopup';
 
 type RouteParams = {
     institutionId: string;
@@ -21,6 +23,9 @@ type RouteParams = {
 
 export function AddPatientToGroup() {
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isAdding, setIsAdding] = useState<boolean>(false);
+    const [confirmAdd, setConfirmAdd] = useState<boolean>(false);
+    const [error, setError] = useState<string>("");
     const [search, setSearch] = useState<string>("");
     const [patientId, setPatientId] = useState<string>("");
     const [patients, setPatients] = useState<Patient[]>([]);
@@ -42,28 +47,25 @@ export function AddPatientToGroup() {
                     setIsLoading(false);
                 })
                 .catch((error) => {
-                    if (axios.isAxiosError(error)) {
-                        console.log('error message: ', error.message);
-                    } else {
-                        console.log('unexpected error: ', error);
-                    }
+                    setError(error.message);
                     setIsLoading(false);
                 });
         }, [])
     );
 
     const addPatient = () => {
-        setIsLoading(true);
+        setIsAdding(true);
         patientService.patchPatient(patientId, null, null, null, null, groupId, institutionId)
             .then(() => {
-                navigation.goBack();
+                const updatedPatients = patients.filter(patient => patient.id !== patientId);
+                setPatients(updatedPatients);
+                setPatientId("");
+                setIsAdding(false);
+                setConfirmAdd(true);
             })
             .catch((error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.message);
-                } else {
-                    console.log('unexpected error: ', error);
-                }
+                setError(error.message);
+                setIsAdding(false);
             });
     };
 
@@ -103,21 +105,36 @@ export function AddPatientToGroup() {
                                 </Center>
                             )}
                         />
+
+                        <Button
+                            title="Adicionar"
+                            variant="green"
+                            w="full"
+                            onPress={() => addPatient()}
+                            isDisabled={patients.length === 0 || !patientId}
+                            isLoading={isAdding}
+                        />
+
                     </VStack>
 
                 </VStack>
 
-                <Button
-                    title="Adicionar"
-                    variant="green"
-                    w="160"
-                    mb={6}
-                    ml={170}
-                    onPress={() => addPatient()}
-                    isDisabled={patients.length === 0}
+                <Menu variant="blank" />
+
+                <Alert
+                    title="Paciente adicionado ao grupo!"
+                    acceptButtonText="Ok"
+                    isOpen={confirmAdd}
+                    onAccept={() => setConfirmAdd(false)}
                 />
 
-                <Menu variant="blank" />
+                <AlertPopup
+                    status="error"
+                    title="Tente novamente mais tarde!"
+                    description={error}
+                    onClose={() => setError("")}
+                    isOpen={error !== ""}
+                />
 
             </VStack>}
         </>
