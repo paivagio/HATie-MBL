@@ -61,14 +61,19 @@ export function SignIn() {
                     onChangeText={setEmail}
                 />
                 <Input
-                    mb={4}
+                    mb={2}
                     placeholder="Senha"
                     InputLeftElement={<Icon as={<Key color={colors.gray[300]} />} ml={4} />}
                     secureTextEntry
                     onChangeText={setPassword}
                 />
 
+                <FormControl.ErrorMessage mb={2} leftIcon={<WarningCircle size={20} color={colors.red[500]} />}>
+                    {isInvalidMessage}
+                </FormControl.ErrorMessage>
+
                 <Checkbox
+
                     value="one"
                     fontSize="sm"
                     onChange={setRememberMe}
@@ -77,9 +82,6 @@ export function SignIn() {
                     Lembre-se de mim
                 </Checkbox>
 
-                <FormControl.ErrorMessage leftIcon={<WarningCircle size={20} color={colors.red[500]} />}>
-                    {isInvalidMessage}
-                </FormControl.ErrorMessage>
             </FormControl>
 
 
