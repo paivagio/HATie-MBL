@@ -1,8 +1,10 @@
+import React, { useEffect, useState } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Heading, HStack, VStack, Text, useTheme, Box, ScrollView, IconButton, Center } from 'native-base';
-import { Bug, CircleWavyCheck, HighlighterCircle, Hourglass, Smiley, SmileySad, Tag } from 'phosphor-react-native';
-import React, { useEffect, useState } from 'react';
-import { Summarization, SummarizationStatus } from '../@types';
+import * as FileSystem from 'expo-file-system';
+
+import { Bug, CircleWavyCheck, Hourglass, Smiley, SmileySad, Tag } from 'phosphor-react-native';
+
 import { AlertPopup } from '../components/AlertPopup';
 import { Button } from '../components/Button';
 import { FindingsTable } from '../components/FindingsTable';
@@ -10,9 +12,14 @@ import { Header } from '../components/Header';
 import { Loading } from '../components/Loading';
 import { Menu } from '../components/Menu';
 import { SmallPlayer } from '../components/SmallPlayer';
+import { Alert } from '../components/Alert';
+import { ValidateSummarizationModal } from '../components/ValidateSummarizationModal';
+
 import summarizationService from '../services/summarizationService';
+
+import { Summarization, SummarizationStatus } from '../@types';
+
 import { toDateFormatLong } from './PatientDetails';
-import * as FileSystem from 'expo-file-system';
 
 type RouteParams = {
     summaryId: string;
@@ -34,6 +41,14 @@ export function SummaryDetails() {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [showTags, setShowTags] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
+    const [confirmDeleteIntention, setConfirmDeleteIntention] = useState<boolean>(false);
+    const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
+    const [isDeleting, setIsDeleting] = useState<boolean>(false);
+    const [confirmValidateIntention, setConfirmValidateIntention] = useState<boolean>(false);
+    const [confirmSentToValidation, setConfirmSentToValidation] = useState<boolean>(false);
+    const [isValidating, setIsValidating] = useState<boolean>(false);
+    const [openValidateModal, setOpenValidateModal] = useState<boolean>(false);
+    const [noChangesWereMade, setNoChangesWereMade] = useState<boolean>(false);
 
     const { colors } = useTheme();
     const navigation = useNavigation();
@@ -79,7 +94,42 @@ export function SummaryDetails() {
     const goBack = async () => {
         if (downloadedAudioPath) await FileSystem.deleteAsync(downloadedAudioPath);
         navigation.goBack();
-    }
+    };
+
+    const deleteEntry = () => {
+        setIsDeleting(true);
+        setConfirmDeleteIntention(false);
+        summarizationService.deleteSummarization(summaryId)
+            .then(() => {
+                setIsDeleting(false);
+                setConfirmDelete(true);
+            })
+            .catch(error => {
+                setError(error.message);
+                setIsDeleting(false);
+            })
+    };
+
+    const validateEntry = (validatedTranscription: string) => {
+        if (!validatedTranscription || validatedTranscription === data.transcription) {
+            setNoChangesWereMade(true);
+            return;
+        };
+
+        setNoChangesWereMade(false);
+        setIsValidating(true);
+        summarizationService.validateSummarization(summaryId, validatedTranscription)
+            .then(() => {
+                setIsValidating(false);
+                setOpenValidateModal(false);
+                setConfirmSentToValidation(true);
+            })
+            .catch(error => {
+                setError(error.message);
+                setIsValidating(false);
+                setOpenValidateModal(false);
+            })
+    };
 
     return (
         <>
@@ -125,7 +175,13 @@ export function SummaryDetails() {
                                         {data.insights?.status && data.insights.status === 500 ? "Internal Server Error" : "Error " + data.insights.status}
                                     </Text>
                                 </Center>
-                                <Button title="Excluir" w="60%" mt={20} onPress={() => { }} variant="red" />
+                                <Button
+                                    title="Excluir"
+                                    w="60%" mt={20}
+                                    onPress={() => setConfirmDeleteIntention(true)}
+                                    variant="red"
+                                    isLoading={isDeleting}
+                                />
                             </VStack>
                             : data.status === SummarizationStatus.PROCESSING
                                 ? <VStack mt="50%" alignItems="center">
@@ -146,7 +202,7 @@ export function SummaryDetails() {
                                         <Text>{toDateFormatLong(data.createdAt)}</Text>
                                     </HStack>
 
-                                    <HStack w="full" mt={2}>
+                                    <HStack w="100%" mt={2}>
                                         {data.insights.tags.map(tag => {
                                             return (
                                                 <Text
@@ -180,7 +236,6 @@ export function SummaryDetails() {
                                         px={5}
                                         my={4}
                                     >
-
                                         <HStack w="full" alignItems="center" justifyContent="space-between" mb={3}>
                                             <VStack>
                                                 <Heading fontSize="md" mb={2}>Transcrição</Heading>
@@ -253,10 +308,75 @@ export function SummaryDetails() {
                                         <Heading fontSize="md" mb={3}>Descobertas</Heading>
                                         <FindingsTable data={tableContents} />
                                     </VStack>
+
+                                    <Button
+                                        title="Excluir"
+                                        w="full"
+                                        mt={7}
+                                        onPress={() => setConfirmDeleteIntention(true)}
+                                        variant="red"
+                                        isLoading={isDeleting}
+                                    />
+
+                                    <Button
+                                        title="Validar entrada"
+                                        w="full"
+                                        mt={3}
+                                        mb={10}
+                                        onPress={() => setConfirmValidateIntention(true)}
+                                        variant="green"
+                                        isLoading={isValidating}
+                                    />
+
                                 </VStack>}
                     </ScrollView>
 
                     <Menu variant="blank" />
+
+                    <ValidateSummarizationModal
+                        title={'Validar entrada'}
+                        isOpen={openValidateModal}
+                        onCancel={() => setOpenValidateModal(false)}
+                        onAccept={validateEntry}
+                        transcription={data.transcription}
+                        isInvalid={noChangesWereMade}
+                    />
+
+                    <Alert
+                        title="Deseja validar a entrada agora?"
+                        description="Você pode revalidar ela sempre que quiser."
+                        acceptButtonText="Sim"
+                        acceptButtonColor="green"
+                        cancelButtonText="Não"
+                        isOpen={confirmValidateIntention}
+                        onCancel={() => setConfirmValidateIntention(false)}
+                        onAccept={() => { setConfirmValidateIntention(false); setOpenValidateModal(true) }}
+                    />
+
+                    <Alert
+                        title="Deseja realmente remover a entrada de áudio?"
+                        description="Todos os dados vinculados serão perdidos."
+                        acceptButtonText="Sim"
+                        acceptButtonColor="red"
+                        cancelButtonText="Não"
+                        isOpen={confirmDeleteIntention}
+                        onCancel={() => setConfirmDeleteIntention(false)}
+                        onAccept={deleteEntry}
+                    />
+
+                    <Alert
+                        title="Entrada de áudio removida com sucesso!"
+                        acceptButtonText="Voltar"
+                        isOpen={confirmDelete}
+                        onAccept={() => navigation.goBack()}
+                    />
+
+                    <Alert
+                        title="Entrada de áudio enviada para validação!"
+                        acceptButtonText="Voltar"
+                        isOpen={confirmSentToValidation}
+                        onAccept={() => navigation.goBack()}
+                    />
 
                     <AlertPopup
                         status="error"

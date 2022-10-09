@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { VStack, Heading, Icon, useTheme, FormControl, HStack, Text, Pressable, Switch, Checkbox } from 'native-base';
-import { Envelope, IdentificationBadge, Key, WarningCircle } from 'phosphor-react-native';
 import { useNavigation } from '@react-navigation/native';
+
+import { Envelope, IdentificationBadge, Key, WarningCircle } from 'phosphor-react-native';
 
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 
-import axios from 'axios';
 import userService from '../services/userService';
+
 import { UserPreferences } from '../@types';
+import { Alert } from '../components/Alert';
+import { AlertPopup } from '../components/AlertPopup';
+import { AxiosError } from 'axios';
 
 const defaultPreferences: UserPreferences = {
     notifications: false,
@@ -20,7 +24,7 @@ export function SignUp() {
     const navigation = useNavigation();
     const { colors } = useTheme();
 
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isCreating, setIsCreating] = useState<boolean>(false);
     const [areBlankFields, setAreBlankFields] = useState<boolean>(false);
     const [invalidPasswordFormat, setInvalidPasswordFormat] = useState<boolean>(false);
     const [differentePasswords, setDifferentePasswords] = useState<boolean>(false);
@@ -31,6 +35,8 @@ export function SignUp() {
     const [confirmPassword, setConfirmPassword] = useState<string>();
     const [isAdmin, setIsAdmin] = useState<boolean>(false);
     const [termsOfService, setTermsOfService] = useState<boolean>(false);
+    const [error, setError] = useState<string>("");
+    const [confirmCreate, setConfirmCreate] = useState<boolean>(false);
 
     const invalidMessage = invalidPasswordFormat
         ? "Senha precisa possuir:\n - 01 Letra maiúscula\n - 01 Letra minúscula\n - 01 Caracter especial\n - 01 Número"
@@ -65,13 +71,15 @@ export function SignUp() {
         }
         setDifferentePasswords(false);
 
-        setIsLoading(true);
+        setIsCreating(true);
         userService.postUser(name, email, password, true, defaultPreferences)
             .then(() => {
-                navigation.navigate('signin');
-            }).catch((error) => {
-                setUserAlreadyRegistered(true);
-                setIsLoading(false);
+                setIsCreating(false);
+                setConfirmCreate(true);
+            }).catch((error: AxiosError) => {
+                if (error.message.includes("404")) setUserAlreadyRegistered(true);
+                else setError(error.message);
+                setIsCreating(false);
             });
     }
 
@@ -150,7 +158,7 @@ export function SignUp() {
             </Text>
 
 
-            <Button mt={6} mb={6} title="Cadastrar" w="full" variant="green" onPress={handleSignUp} isLoading={isLoading} />
+            <Button mt={6} mb={6} title="Cadastrar" w="full" variant="green" onPress={handleSignUp} isLoading={isCreating} />
 
             <HStack w="full" alignItems="center" justifyContent="center" position="absolute" bottom={10}>
                 <Text color="gray.400" fontSize="md" >Já possui uma conta? </Text>
@@ -158,6 +166,21 @@ export function SignUp() {
                     <Text color="green.700" fontSize="md" fontFamily="Roboto_500Medium">Entrar</Text>
                 </Pressable>
             </HStack>
+
+            <Alert
+                title="Paciente criado com sucesso!"
+                acceptButtonText="Voltar"
+                isOpen={confirmCreate}
+                onAccept={() => navigation.navigate('signin')}
+            />
+
+            <AlertPopup
+                status="error"
+                title="Tente novamente mais tarde!"
+                description={error}
+                onClose={() => setError("")}
+                isOpen={error !== ""}
+            />
 
         </VStack>
     )

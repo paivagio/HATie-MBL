@@ -57,6 +57,21 @@ export default {
             throw error;
         }
     },
+    resetPassword: async (
+        id: string,
+        password: string,
+        code: number
+    ) => {
+        try {
+            const data = await Api.patch<User>(`users/${id}/resetPassword`, {
+                password: password,
+                code: code
+            });
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },
     deleteUser: async (id: string) => {
         try {
             const data = await Api.delete<User>(`users/${id}`, {});

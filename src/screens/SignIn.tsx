@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { VStack, Heading, Icon, useTheme, FormControl, HStack, Text, Pressable } from 'native-base';
+import { VStack, Heading, Icon, useTheme, FormControl, HStack, Text, Pressable, Switch, Checkbox } from 'native-base';
 import { Envelope, Key, WarningCircle } from 'phosphor-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { AxiosError } from 'axios';
 
 import Logo from '../assets/logo_text_dark.svg';
 
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
-import { useDispatch } from '../hooks';
+import { AlertPopup } from '../components/AlertPopup';
 
 import authenticationService from '../services/authenticationService';
-import axios, { AxiosResponse } from 'axios';
+
 import { authenticate } from '../store/reducers/authenticationReducer';
-import { useNavigation } from '@react-navigation/native';
+import { useDispatch } from '../hooks';
 
 export function SignIn() {
     const navigation = useNavigation();
@@ -22,6 +24,8 @@ export function SignIn() {
     const [isInvalidMessage, setIsInvalidMessage] = useState<string>();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState<boolean>(false);
+    const [error, setError] = useState<string>("");
 
     function handleSignIn() {
         if (!email || !password) {
@@ -34,13 +38,9 @@ export function SignIn() {
             .then((response) => {
                 const { token, user } = response.data;
                 dispatch(authenticate({ token, user }));
-            }).catch((error) => {
-                if (axios.isAxiosError(error)) {
-                    console.log('error message: ', error.response);
-                } else {
-                    console.log('unexpected error: ', error);
-                };
-                setIsInvalidMessage("Usuário e/ou senha inválidos.");
+            }).catch((error: AxiosError) => {
+                if (error.message.includes("401")) setIsInvalidMessage("Usuário e/ou senha inválidos.");
+                else setError(error.message);
                 setIsLoading(false);
             });
     }
@@ -61,24 +61,51 @@ export function SignIn() {
                     onChangeText={setEmail}
                 />
                 <Input
+                    mb={4}
                     placeholder="Senha"
                     InputLeftElement={<Icon as={<Key color={colors.gray[300]} />} ml={4} />}
                     secureTextEntry
                     onChangeText={setPassword}
                 />
+
+                <Checkbox
+                    value="one"
+                    fontSize="sm"
+                    onChange={setRememberMe}
+                    isInvalid={false}
+                >
+                    Lembre-se de mim
+                </Checkbox>
+
                 <FormControl.ErrorMessage leftIcon={<WarningCircle size={20} color={colors.red[500]} />}>
                     {isInvalidMessage}
                 </FormControl.ErrorMessage>
             </FormControl>
 
+
+
             <Button title="Entrar" w="full" variant="green" onPress={handleSignIn} isLoading={isLoading} />
 
-            <HStack mt={40} w="full" alignItems="center" justifyContent="center">
+            <HStack mt={24} w="full" alignItems="center" justifyContent="center">
                 <Text color="gray.400" fontSize="md" >Não possui uma conta ainda? </Text>
                 <Pressable onPress={() => navigation.navigate('signup')}>
                     <Text color="green.700" fontSize="md" fontFamily="Roboto_500Medium">Cadastre-se</Text>
                 </Pressable>
             </HStack>
+            <HStack mt={2} w="full" alignItems="center" justifyContent="center">
+                <Text color="gray.400" fontSize="md" >Esqueceu sua senha? </Text>
+                <Pressable onPress={() => navigation.navigate('resetPassword')}>
+                    <Text color="green.700" fontSize="md" fontFamily="Roboto_500Medium">Resetar senha</Text>
+                </Pressable>
+            </HStack>
+
+            <AlertPopup
+                status="error"
+                title="Tente novamente mais tarde!"
+                description={error}
+                onClose={() => setError("")}
+                isOpen={error !== ""}
+            />
 
         </VStack>
     )

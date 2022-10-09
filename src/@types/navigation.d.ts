@@ -4,6 +4,7 @@ export declare global {
             home: undefined;
             signin: undefined;
             signup: undefined;
+            resetPassword: undefined;
             preferences: undefined;
             invitations: undefined;
             institutionDetails: { institutionId: string, isOwner: boolean, memberId?: string, memberPermissions?: number };
@@ -23,8 +24,6 @@ export declare global {
             newMember: { institutionId: string };
             manageGroup: { groupId: string };
             manageGroupMembers: { groupId: string };
-            // new: undefined;
-            // details: { orderId: string };
         }
     }
 }

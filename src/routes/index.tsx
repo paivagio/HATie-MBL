@@ -11,6 +11,7 @@ import { SignUp } from '../screens/SignUp';
 import { AppRoutes } from './app.routes';
 
 import store from '../store/store';
+import { ResetPassword } from '../screens/ResetPassword';
 
 const { Navigator, Screen } = createNativeStackNavigator();
 
@@ -39,6 +40,7 @@ export function Routes() {
                         : <Navigator screenOptions={{ headerShown: false }}>
                             <Screen name="signin" component={SignIn} />
                             <Screen name="signup" component={SignUp} />
+                            <Screen name="resetPassword" component={ResetPassword} />
                         </Navigator>}
                 </NavigationContainer>
             }

@@ -53,6 +53,19 @@ export default {
             throw error;
         }
     },
+    validateSummarization: async (
+        id: string,
+        transcription: string,
+    ) => {
+        try {
+            const data = await Api.patch<Summarization>(`summarizations/${id}/validate`, {
+                transcription: transcription
+            });
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    },
     deleteSummarization: async (id: string) => {
         try {
             const data = await Api.delete<Summarization>(`summarizations/${id}`, {});
